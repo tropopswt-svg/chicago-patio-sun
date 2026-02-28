@@ -262,8 +262,8 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Top-right buttons */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+      {/* Top-right: nav buttons + toggles */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
         <div className="flex gap-2">
           <button
             onClick={() => setSubmitFormOpen(true)}
@@ -292,12 +292,9 @@ function AppContent() {
             <span>Zoom out</span>
           </button>
         )}
-      </div>
 
-      {/* Bottom-left stack: Legend + Toggle above time slider */}
-      <div className="absolute bottom-[170px] left-4 z-10 flex flex-col gap-2 items-start">
-        <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} />
-        <div className="glass-panel rounded-full flex p-1 gap-0.5">
+        {/* Patio / Rooftop toggles */}
+        <div className="glass-panel rounded-full flex p-1 gap-0.5 mt-1">
           <button
             onClick={() =>
               setQuickFilter((f) => ({
@@ -305,7 +302,7 @@ function AppContent() {
                 setting: f.setting === "patio" ? "all" : "patio",
               }))
             }
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               quickFilter.setting === "patio"
                 ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                 : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -320,7 +317,7 @@ function AppContent() {
                 setting: f.setting === "rooftop" ? "all" : "rooftop",
               }))
             }
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               quickFilter.setting === "rooftop"
                 ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                 : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -328,22 +325,12 @@ function AppContent() {
           >
             🏙️ Rooftop
           </button>
-          <button
-            onClick={() =>
-              setQuickFilter((f) => ({
-                ...f,
-                setting: "all",
-              }))
-            }
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              quickFilter.setting === "all"
-                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
-                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
-            }`}
-          >
-            🤷 Neither
-          </button>
         </div>
+      </div>
+
+      {/* Bottom-left: Legend */}
+      <div className="absolute bottom-[240px] left-4 z-10">
+        <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} />
       </div>
 
       {/* Weather overlay — transparent floating text */}
@@ -359,8 +346,8 @@ function AppContent() {
         </div>
       )}
 
-      {/* Bottom: Time Slider — half-width on mobile, no panel */}
-      <div className="absolute bottom-4 left-4 w-[45vw] sm:w-[320px] z-10">
+      {/* Bottom-left: Vertical Time Slider */}
+      <div className="absolute bottom-4 left-3 z-10">
         <TimeSlider
           timeState={timeState}
           sunriseMinute={sunriseMinute}

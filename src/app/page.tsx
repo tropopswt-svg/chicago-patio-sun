@@ -8,7 +8,6 @@ import type mapboxgl from "mapbox-gl";
 import { MapProvider, useMapContext } from "@/components/providers/MapProvider";
 import { Header } from "@/components/ui/Header";
 import { TimeSlider } from "@/components/ui/TimeSlider";
-import { Legend } from "@/components/ui/Legend";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { SunIndicator } from "@/components/ui/SunIndicator";
 import { QuickFilter } from "@/components/ui/QuickFilter";
@@ -19,6 +18,7 @@ import { SubmitPatioForm } from "@/components/ui/SubmitPatioForm";
 import { PatioDetailPanel } from "@/components/ui/PatioDetailPanel";
 import { usePatioSunStatus } from "@/hooks/usePatioSunStatus";
 import { useWeatherData } from "@/hooks/useWeatherData";
+import { decodeWeatherCode } from "@/lib/weather-utils";
 import { CHICAGO_CENTER, DEFAULT_ZOOM, DEFAULT_PITCH, DEFAULT_BEARING, NEIGHBORHOOD_LABELS } from "@/lib/constants";
 import { getNeighborhood, isFood } from "@/lib/neighborhoods";
 import { isOpenAt } from "@/lib/hours";
@@ -123,6 +123,17 @@ function AppContent() {
     () => filteredPatios.filter((p) => !p.inSun).length,
     [filteredPatios]
   );
+
+  const weatherDisplay = useMemo(() => {
+    if (!weather) return null;
+    const { label, icon } = decodeWeatherCode(weather.current.weatherCode);
+    return {
+      temperature: Math.round(weather.current.temperature),
+      uvIndex: weather.current.uvIndex,
+      label,
+      icon,
+    };
+  }, [weather]);
 
   const handleMapReady = useCallback(
     (map: mapboxgl.Map) => {
@@ -231,7 +242,7 @@ function AppContent() {
       {/* Sun direction indicator */}
       <SunIndicator date={timeState.date} mapBearing={mapBearing} />
 
-      {/* Top-left: Header + Quick Filter */}
+      {/* Top-left: Header + Quick Filter + Toggles */}
       <div className="absolute top-4 left-4 z-10 w-64 sm:w-72">
         <Header
           sidebarOpen={sidebarOpen}
@@ -248,40 +259,7 @@ function AppContent() {
             currentTime={timeState.date}
           />
         </div>
-      </div>
-
-      {/* Top-right: nav buttons + toggles */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSubmitFormOpen(true)}
-            className="glass-icon-btn"
-            title="Submit a patio"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleRecenter}
-            className="glass-icon-btn"
-            title="Recenter to Old Town / River North"
-          >
-            <Crosshair className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Zoom-out button — appears after clicking into a patio */}
-        {selectedPatioId && (
-          <button
-            onClick={handleZoomOut}
-            className="glass-panel flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
-            title="Zoom back out"
-          >
-            <ZoomOut className="w-4 h-4" />
-            <span>Zoom out</span>
-          </button>
-        )}
-
-        {/* Patio / Rooftop / Neither — stacked vertically */}
+        {/* Patio / Rooftop / Neither toggles */}
         <div className="flex flex-col gap-1.5 mt-2">
           <button
             onClick={() =>
@@ -331,13 +309,53 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Bottom-left: Legend */}
-      <div className="absolute bottom-[240px] left-4 z-10">
-        <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} />
+      {/* Top-right: nav buttons */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSubmitFormOpen(true)}
+            className="glass-icon-btn"
+            title="Submit a patio"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleRecenter}
+            className="glass-icon-btn"
+            title="Recenter to Old Town / River North"
+          >
+            <Crosshair className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Zoom-out button */}
+        {selectedPatioId && (
+          <button
+            onClick={handleZoomOut}
+            className="glass-panel flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
+            title="Zoom back out"
+          >
+            <ZoomOut className="w-4 h-4" />
+            <span>Zoom out</span>
+          </button>
+        )}
       </div>
 
-      {/* Bottom-left: Vertical Time Slider */}
-      <div className="absolute bottom-4 left-3 z-10">
+      {/* Weather overlay — transparent floating text */}
+      {weatherDisplay && (
+        <div className="absolute bottom-16 right-4 z-10 pointer-events-none select-none">
+          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.3)" }}>
+            <span className="text-lg">{weatherDisplay.icon}</span>
+            <span className="text-white/70 font-medium">{weatherDisplay.temperature}°F</span>
+            <span className="text-white/45">{weatherDisplay.label}</span>
+            <span className="text-white/20">|</span>
+            <span className="text-white/45">UV {weatherDisplay.uvIndex}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom center: Horizontal Time Slider */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
         <TimeSlider
           timeState={timeState}
           sunriseMinute={sunriseMinute}

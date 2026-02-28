@@ -159,9 +159,18 @@ export function PatioDetailPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/15" onClick={onClose} />
 
-      <div className="glass-panel relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up sm:animate-none">
+      <div
+        className="relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up sm:animate-none"
+        style={{
+          background: "linear-gradient(160deg, rgba(15, 15, 35, 0.35) 0%, rgba(15, 15, 35, 0.25) 50%, rgba(255, 255, 255, 0.04) 100%)",
+          backdropFilter: "blur(40px) saturate(200%)",
+          WebkitBackdropFilter: "blur(40px) saturate(200%)",
+          border: "0.5px solid rgba(255, 255, 255, 0.15)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
+        }}
+      >
         {/* Drag handle (mobile) */}
         <div className="sm:hidden flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-white/20" />
@@ -176,7 +185,7 @@ export function PatioDetailPanel({
 
         {/* Hero photo */}
         {heroPhotoUrl ? (
-          <img src={heroPhotoUrl} alt={patio.name} className="w-full h-[160px] object-cover" />
+          <img src={heroPhotoUrl} alt={patio.name} className="w-full h-[120px] object-cover" />
         ) : (
           <div className={cn(
             "w-full h-[120px] flex items-center justify-center",

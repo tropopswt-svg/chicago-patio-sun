@@ -281,14 +281,14 @@ function AppContent() {
                 }));
                 setFilterPanelOpen(false);
               }}
-              title={t.title}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              title={t.label}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
                 quickFilter.setting === t.value
                   ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                   : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
               }`}
             >
-              {t.label}
+              {t.emoji} {t.label}
             </button>
           ))}
         </div>

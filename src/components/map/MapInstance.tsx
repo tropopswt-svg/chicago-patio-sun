@@ -57,8 +57,8 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
             type: "directional",
             properties: {
               direction: [azimuthDegrees, sunUp ? Math.max(5, altitudeDegrees) : 80],
-              color: sunUp ? sunColor : "#111133",
-              intensity: sunUp ? intensity : 0,
+              color: sunUp ? sunColor : "#222244",
+              intensity: sunUp ? intensity : 0.05,
               "cast-shadows": true,
               "shadow-intensity": sunUp ? 1.0 : 0,
             },
@@ -67,8 +67,8 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
             id: "ambient",
             type: "ambient",
             properties: {
-              color: sunUp ? "#8090b0" : "#1a1a3e",
-              intensity: sunUp ? 0.1 : 0.15,
+              color: sunUp ? "#8090b0" : "#252550",
+              intensity: sunUp ? 0.1 : 0.25,
             },
           },
         ]);
@@ -77,8 +77,8 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
         useLightsAPI = false;
         map.setLight({
           anchor: "map",
-          color: sunUp ? sunColor : "#111133",
-          intensity: sunUp ? intensity : 0.1,
+          color: sunUp ? sunColor : "#222244",
+          intensity: sunUp ? intensity : 0.15,
           position: [1.5, azimuthDegrees, sunUp ? Math.max(10, 90 - altitudeDegrees) : 80],
         });
       }
@@ -121,11 +121,11 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
       });
     } else {
       map.setFog({
-        color: "rgb(10, 10, 25)",
-        "high-color": "rgb(15, 15, 35)",
+        color: "rgb(18, 18, 38)",
+        "high-color": "rgb(25, 25, 50)",
         "horizon-blend": 0.1,
-        "space-color": "rgb(5, 5, 15)",
-        "star-intensity": 0.5,
+        "space-color": "rgb(12, 12, 28)",
+        "star-intensity": 0.35,
       });
     }
   } catch (err) {
@@ -197,7 +197,7 @@ export default function MapInstance({
       maxZoom: 20,
     });
 
-    map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
 
     // First 3 clicks: zoom in progressively, then switch to 3D tilted view
     const handleZoomClick = (e: mapboxgl.MapMouseEvent) => {

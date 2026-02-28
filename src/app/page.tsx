@@ -343,7 +343,7 @@ function AppContent() {
 
       {/* Weather overlay — transparent floating text */}
       {weatherDisplay && (
-        <div className="absolute bottom-16 right-4 z-10 pointer-events-none select-none">
+        <div className="absolute bottom-28 right-4 z-10 pointer-events-none select-none">
           <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.3)" }}>
             <span className="text-lg">{weatherDisplay.icon}</span>
             <span className="text-white/70 font-medium">{weatherDisplay.temperature}°F</span>

@@ -268,9 +268,9 @@ function AppContent() {
         {/* Patio / Rooftop / Neither toggles */}
         <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
           {([
-            { value: "patio" as const, label: "🕺", title: "Patio" },
-            { value: "rooftop" as const, label: "🏙️", title: "Rooftop" },
-            { value: "all" as const, label: "🤷", title: "All" },
+            { value: "patio" as const, emoji: "🕺", label: "Patio" },
+            { value: "rooftop" as const, emoji: "🏙️", label: "Rooftop" },
+            { value: "all" as const, emoji: "🤷", label: "Neither" },
           ]).map((t) => (
             <button
               key={t.value}
@@ -294,22 +294,35 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Top-right: small nav buttons */}
-      <div className="absolute top-3 right-3 z-10 flex gap-1.5">
-        <button
-          onClick={() => setSubmitFormOpen(true)}
-          className="glass-icon-btn"
-          title="Submit a patio"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-        <button
-          onClick={handleRecenter}
-          className="glass-icon-btn"
-          title="Recenter to Old Town / River North"
-        >
-          <Crosshair className="w-5 h-5" />
-        </button>
+      {/* Top-right: nav buttons + weather */}
+      <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setSubmitFormOpen(true)}
+            className="glass-icon-btn"
+            title="Submit a patio"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleRecenter}
+            className="glass-icon-btn"
+            title="Recenter to Old Town / River North"
+          >
+            <Crosshair className="w-5 h-5" />
+          </button>
+        </div>
+        {weatherDisplay && (
+          <div className="pointer-events-none select-none">
+            <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
+              <span className="text-lg">{weatherDisplay.icon}</span>
+              <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
+              <span className="text-white/30">{weatherDisplay.label}</span>
+              <span className="text-white/15">|</span>
+              <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right side: Find a Bar + Zoom out */}
@@ -339,19 +352,6 @@ function AppContent() {
           </button>
         )}
       </div>
-
-      {/* Weather overlay — center of screen */}
-      {weatherDisplay && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none select-none">
-          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
-            <span className="text-lg">{weatherDisplay.icon}</span>
-            <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
-            <span className="text-white/30">{weatherDisplay.label}</span>
-            <span className="text-white/15">|</span>
-            <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
-          </div>
-        </div>
-      )}
 
       {/* Bottom center: Horizontal Time Slider — hidden when filters or sidebar open */}
       {!filterPanelOpen && !sidebarOpen && (

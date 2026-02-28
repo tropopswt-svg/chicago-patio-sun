@@ -25,8 +25,8 @@ const MANUAL_INTERVAL = 100; // 100ms
 
 export function useTimeControl() {
   const now = new Date();
-  const initSunrise = getSunriseMinute(now);
-  const [date, setDate] = useState<Date>(() => dateFromMinute(now, initSunrise));
+  const START_MINUTE = 480; // 8:00 AM — ensures visible sunlight on load
+  const [date, setDate] = useState<Date>(() => dateFromMinute(now, START_MINUTE));
   const [isPlaying, setIsPlaying] = useState(true);
   const [isAutoplay, setIsAutoplay] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);

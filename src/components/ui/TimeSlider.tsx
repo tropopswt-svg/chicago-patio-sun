@@ -110,9 +110,9 @@ export function TimeSlider({
               background: `linear-gradient(to right,
                 rgba(26, 26, 62, 0.6) 0%,
                 rgba(26, 26, 62, 0.6) ${sunrisePct}%,
-                #f59e0b ${sunrisePct + 5}%,
+                #f59e0b ${sunrisePct + 2}%,
                 #fbbf24 ${(sunrisePct + sunsetPct) / 2}%,
-                #f59e0b ${sunsetPct - 5}%,
+                #f59e0b ${sunsetPct - 2}%,
                 rgba(26, 26, 62, 0.6) ${sunsetPct}%,
                 rgba(26, 26, 62, 0.6) 100%
               )`,

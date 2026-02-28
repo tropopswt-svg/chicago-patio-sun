@@ -327,6 +327,21 @@ function AppContent() {
           >
             🏙️ Rooftop
           </button>
+          <button
+            onClick={() =>
+              setQuickFilter((f) => ({
+                ...f,
+                setting: "all",
+              }))
+            }
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              quickFilter.setting === "all"
+                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
+                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
+            }`}
+          >
+            🤷 Neither
+          </button>
         </div>
       </div>
 

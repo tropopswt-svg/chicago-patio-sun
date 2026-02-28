@@ -16,7 +16,7 @@ export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
         </div>
         <div>
           <h1 className="text-sm font-semibold text-white/90 leading-tight tracking-tight">
-            Golden Hour Chicago
+            Chicago Booze Map
           </h1>
           <p className="text-[10px] text-white/40">Patio Sunlight Tracker</p>
         </div>

@@ -19,7 +19,6 @@ import { SubmitPatioForm } from "@/components/ui/SubmitPatioForm";
 import { PatioDetailPanel } from "@/components/ui/PatioDetailPanel";
 import { usePatioSunStatus } from "@/hooks/usePatioSunStatus";
 import { useWeatherData } from "@/hooks/useWeatherData";
-import { decodeWeatherCode } from "@/lib/weather-utils";
 import { CHICAGO_CENTER, DEFAULT_ZOOM, DEFAULT_PITCH, DEFAULT_BEARING, NEIGHBORHOOD_LABELS } from "@/lib/constants";
 import { getNeighborhood, isFood } from "@/lib/neighborhoods";
 import { isOpenAt } from "@/lib/hours";
@@ -115,17 +114,6 @@ function AppContent() {
       return true;
     });
   }, [patiosWithStatus, quickFilter, hoursFilter, patioNeighborhoods, timeState.date]);
-
-  const weatherDisplay = useMemo(() => {
-    if (!weather) return null;
-    const { label, icon } = decodeWeatherCode(weather.current.weatherCode);
-    return {
-      temperature: Math.round(weather.current.temperature),
-      uvIndex: weather.current.uvIndex,
-      label,
-      icon,
-    };
-  }, [weather]);
 
   const filteredSunCount = useMemo(
     () => filteredPatios.filter((p) => p.inSun).length,
@@ -293,8 +281,8 @@ function AppContent() {
           </button>
         )}
 
-        {/* Patio / Rooftop toggles */}
-        <div className="glass-panel rounded-full flex p-1 gap-0.5 mt-1">
+        {/* Patio / Rooftop / Neither — stacked vertically */}
+        <div className="flex flex-col gap-1.5 mt-2">
           <button
             onClick={() =>
               setQuickFilter((f) => ({
@@ -302,7 +290,7 @@ function AppContent() {
                 setting: f.setting === "patio" ? "all" : "patio",
               }))
             }
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            className={`glass-panel px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               quickFilter.setting === "patio"
                 ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                 : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -317,13 +305,28 @@ function AppContent() {
                 setting: f.setting === "rooftop" ? "all" : "rooftop",
               }))
             }
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            className={`glass-panel px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               quickFilter.setting === "rooftop"
                 ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                 : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
             }`}
           >
             🏙️ Rooftop
+          </button>
+          <button
+            onClick={() =>
+              setQuickFilter((f) => ({
+                ...f,
+                setting: "all",
+              }))
+            }
+            className={`glass-panel px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              quickFilter.setting === "all"
+                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
+                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
+            }`}
+          >
+            🤷 Neither
           </button>
         </div>
       </div>
@@ -332,19 +335,6 @@ function AppContent() {
       <div className="absolute bottom-[240px] left-4 z-10">
         <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} />
       </div>
-
-      {/* Weather overlay — transparent floating text */}
-      {weatherDisplay && (
-        <div className="absolute bottom-[100px] right-4 z-10 pointer-events-none select-none">
-          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.3)" }}>
-            <span className="text-lg">{weatherDisplay.icon}</span>
-            <span className="text-white/70 font-medium">{weatherDisplay.temperature}°F</span>
-            <span className="text-white/45">{weatherDisplay.label}</span>
-            <span className="text-white/20">|</span>
-            <span className="text-white/45">UV {weatherDisplay.uvIndex}</span>
-          </div>
-        </div>
-      )}
 
       {/* Bottom-left: Vertical Time Slider */}
       <div className="absolute bottom-4 left-3 z-10">
@@ -377,6 +367,9 @@ function AppContent() {
       <PatioDetailPanel
         patio={detailPatio}
         minuteOfDay={timeState.minuteOfDay}
+        date={timeState.date}
+        buildingIndex={buildingIndex}
+        onTimeChange={setMinuteOfDay}
         onClose={() => setDetailPatio(null)}
       />
 

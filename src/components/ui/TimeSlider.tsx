@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useCallback } from "react";
 import { Play, Pause, Moon } from "lucide-react";
 import { formatMinuteOfDay } from "@/lib/suncalc-utils";
 import { cn } from "@/lib/utils";
@@ -21,28 +22,76 @@ export function TimeSlider({
   onTogglePlay,
 }: TimeSliderProps) {
   const { minuteOfDay, isPlaying, isNight } = timeState;
+  const [isDragging, setIsDragging] = useState(false);
+  const [isFading, setIsFading] = useState(false);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sunrisePct = (sunriseMinute / 1440) * 100;
   const sunsetPct = (sunsetMinute / 1440) * 100;
   const currentPct = (minuteOfDay / 1440) * 100;
 
+  // Track height in px
+  const TRACK_H = 180;
+
+  // Thumb vertical offset from top of track container
+  const thumbTop = TRACK_H - (currentPct / 100) * TRACK_H;
+
+  const handleDragStart = useCallback(() => {
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    setIsFading(false);
+    setIsDragging(true);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsFading(true);
+    fadeTimer.current = setTimeout(() => {
+      setIsDragging(false);
+      setIsFading(false);
+    }, 500);
+  }, []);
+
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 relative">
+      {/* Large floating time popup — appears during drag */}
+      {isDragging && (
+        <div
+          className="absolute z-20 pointer-events-none"
+          style={{
+            left: 40,
+            top: thumbTop - 18,
+            transition: isFading ? "opacity 0.5s ease-out" : "top 0.05s linear",
+            opacity: isFading ? 0 : 1,
+          }}
+        >
+          <span
+            className="text-3xl font-semibold tracking-tight whitespace-nowrap"
+            style={{
+              color: "rgba(255,255,255,0.85)",
+              textShadow:
+                "0 2px 12px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.4)",
+            }}
+          >
+            {formatMinuteOfDay(minuteOfDay)}
+          </span>
+        </div>
+      )}
+
       {/* Track container — rotated horizontal slider rendered vertically */}
-      <div className="relative" style={{ width: 24, height: 160 }}>
+      <div className="relative" style={{ width: 28, height: TRACK_H }}>
         <div
           className="absolute"
           style={{
-            width: 160,
-            height: 24,
+            width: TRACK_H,
+            height: 28,
             transform: "rotate(-90deg)",
             transformOrigin: "top left",
-            top: 160,
+            top: TRACK_H,
             left: 0,
           }}
         >
-          <div className="relative w-full" style={{ paddingTop: 10 }}>
-            <div className="h-1.5 rounded-full overflow-hidden relative">
+          <div className="relative w-full" style={{ paddingTop: 8 }}>
+            {/* Thicker track */}
+            <div className="h-2.5 rounded-full overflow-hidden relative">
               <div
                 className="absolute inset-0"
                 style={{
@@ -69,19 +118,25 @@ export function TimeSlider({
               max={1439}
               value={minuteOfDay}
               onChange={(e) => onMinuteChange(parseInt(e.target.value))}
-              className="absolute w-full h-6 opacity-0 cursor-pointer"
-              style={{ top: 4, left: 0 }}
+              onMouseDown={handleDragStart}
+              onMouseUp={handleDragEnd}
+              onTouchStart={handleDragStart}
+              onTouchEnd={handleDragEnd}
+              className="absolute w-full h-8 opacity-0 cursor-pointer"
+              style={{ top: 2, left: 0 }}
             />
 
             {/* Thumb */}
             <div
-              className="absolute -translate-y-1/2 w-3.5 h-3.5 rounded-full pointer-events-none transition-[left] duration-75"
+              className="absolute -translate-y-1/2 w-4 h-4 rounded-full pointer-events-none transition-[left] duration-75"
               style={{
                 top: "50%",
                 marginTop: 1,
-                left: `calc(${currentPct}% - 7px)`,
-                background: "linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
-                boxShadow: "0 1px 6px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.3)",
+                left: `calc(${currentPct}% - 8px)`,
+                background:
+                  "linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
+                boxShadow:
+                  "0 1px 6px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.3)",
               }}
             />
           </div>

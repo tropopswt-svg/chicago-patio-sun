@@ -51,12 +51,17 @@ export function PatioDetailPanel({ patio, minuteOfDay, onClose }: PatioDetailPan
   const dotPosition = busyness ? (busyness.value / 100) * barWidth : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4">
+      {/* Backdrop — tappable to close, semi-transparent so map shows through */}
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="glass-panel relative w-full max-w-md rounded-[24px] overflow-hidden max-h-[90vh] overflow-y-auto">
+      {/* Bottom sheet on mobile, centered modal on desktop */}
+      <div className="glass-panel relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up sm:animate-none">
+        {/* Drag handle (mobile) */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Close button */}
         <button
           onClick={onClose}

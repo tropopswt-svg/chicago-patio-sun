@@ -195,6 +195,7 @@ function AppContent() {
     (patio: PatioWithSunStatus) => {
       setSelectedPatioId(patio.id);
       setDetailPatio(patio);
+      setSidebarOpen(false);
       flyTo(patio.lng, patio.lat);
     },
     [flyTo]

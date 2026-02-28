@@ -453,6 +453,16 @@ body {
   animation: quick-filter-in 0.2s ease-out;
 }
 
+/* Bottom sheet slide-up animation */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 /* Sunlit marker pulse animation */
 @keyframes sun-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 0, 0.4); }

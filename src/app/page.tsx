@@ -341,15 +341,15 @@ function AppContent() {
         )}
       </div>
 
-      {/* Weather overlay — transparent floating text */}
+      {/* Weather overlay — fixed top-center, liquid glass transparent text */}
       {weatherDisplay && (
-        <div className="absolute bottom-28 right-4 z-10 pointer-events-none select-none">
-          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.3)" }}>
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 pointer-events-none select-none">
+          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
             <span className="text-lg">{weatherDisplay.icon}</span>
-            <span className="text-white/70 font-medium">{weatherDisplay.temperature}°F</span>
-            <span className="text-white/45">{weatherDisplay.label}</span>
-            <span className="text-white/20">|</span>
-            <span className="text-white/45">UV {weatherDisplay.uvIndex}</span>
+            <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
+            <span className="text-white/30">{weatherDisplay.label}</span>
+            <span className="text-white/15">|</span>
+            <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
           </div>
         </div>
       )}

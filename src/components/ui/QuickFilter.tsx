@@ -154,23 +154,23 @@ export function QuickFilter({
 
       {/* Filter panel */}
       {isOpen && (
-        <div className="glass-panel rounded-[20px] p-4 w-[calc(100vw-2rem)] sm:w-96 mt-2 quick-filter-enter">
+        <div className="glass-panel rounded-[20px] p-3 w-[calc(100vw-2rem)] sm:w-80 mt-2 quick-filter-enter">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white/90 font-semibold text-sm tracking-tight">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white/90 font-semibold text-xs tracking-tight">
               What are you looking for?
             </h3>
             <button
               onClick={onToggle}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.08] transition-all"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.08] transition-all"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Neighborhood section */}
-          <div className="mb-4">
-            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
+          <div className="mb-3">
+            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
               Neighborhood
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -204,8 +204,8 @@ export function QuickFilter({
           </div>
 
           {/* Food section */}
-          <div className="mb-4">
-            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
+          <div className="mb-3">
+            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
               Food
             </label>
             <div className="flex gap-1.5">
@@ -223,8 +223,8 @@ export function QuickFilter({
           </div>
 
           {/* Setting section */}
-          <div className="mb-4">
-            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
+          <div className="mb-3">
+            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
               Setting
             </label>
             <div className="flex gap-1.5">
@@ -242,8 +242,8 @@ export function QuickFilter({
           </div>
 
           {/* Hours section */}
-          <div className="mb-4">
-            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
+          <div className="mb-3">
+            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
               Hours
             </label>
             <div className="flex flex-wrap gap-1.5">

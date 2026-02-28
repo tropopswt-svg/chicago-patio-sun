@@ -259,10 +259,13 @@ function AppContent() {
             onNeighborhoodFlyTo={handleNeighborhoodFlyTo}
             currentTime={timeState.date}
             isOpen={filterPanelOpen}
-            onToggle={() => setFilterPanelOpen((v) => !v)}
+            onToggle={() => {
+              setFilterPanelOpen((v) => !v);
+              setSidebarOpen(false);
+            }}
           />
         </div>
-        {/* Patio / Rooftop / Neither toggles — compact inline */}
+        {/* Patio / Rooftop / Neither toggles */}
         <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
           {([
             { value: "patio" as const, label: "🕺", title: "Patio" },
@@ -271,14 +274,15 @@ function AppContent() {
           ]).map((t) => (
             <button
               key={t.value}
-              onClick={() =>
+              onClick={() => {
                 setQuickFilter((f) => ({
                   ...f,
                   setting: t.value === "all" ? "all" : f.setting === t.value ? "all" : t.value,
-                }))
-              }
+                }));
+                setFilterPanelOpen(false);
+              }}
               title={t.title}
-              className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 quickFilter.setting === t.value
                   ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                   : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -309,13 +313,16 @@ function AppContent() {
           </button>
         </div>
 
-        {/* Find a Bar — big sidebar toggle on right */}
+        {/* Find a Bar — big box button */}
         <button
-          onClick={() => setSidebarOpen((v) => !v)}
-          className="glass-panel flex items-center justify-center gap-2 px-5 py-3 rounded-full text-sm font-semibold text-white/85 hover:text-white hover:bg-white/[0.12] transition-all"
+          onClick={() => {
+            setSidebarOpen((v) => !v);
+            setFilterPanelOpen(false);
+          }}
+          className="glass-panel flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl text-base font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
           title="Browse all patios"
         >
-          <span>🍺</span>
+          <span className="text-xl">🍺</span>
           <span>{sidebarOpen ? "Close" : "Find a Bar"}</span>
         </button>
 

@@ -48,7 +48,7 @@ function AppContent() {
     lateNight: false,
   });
 
-  const { timeState, sunriseMinute, sunsetMinute, setMinuteOfDay, togglePlay } =
+  const { timeState, sunriseMinute, sunsetMinute, setMinuteOfDay, togglePlay, stopPlay } =
     useTimeControl();
   const { patios, isLoading, refreshPatios } = usePatioData();
   const { buildingIndex } = useBuildingData();
@@ -228,7 +228,7 @@ function AppContent() {
   );
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
+    <div className="relative w-screen h-screen overflow-hidden" onPointerDown={stopPlay}>
       {/* Map */}
       <MapInstance
         onMapReady={handleMapReady}

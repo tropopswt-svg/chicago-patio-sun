@@ -53,6 +53,14 @@ export function useTimeControl() {
     });
   }, []);
 
+  // Any screen interaction → kill autoplay completely
+  const stopPlay = useCallback(() => {
+    if (isAutoplay) {
+      setIsPlaying(false);
+      setIsAutoplay(false);
+    }
+  }, [isAutoplay]);
+
   // Play button → always manual (minute-by-minute) after first interaction
   const togglePlay = useCallback(() => {
     setIsAutoplay(false);
@@ -100,5 +108,6 @@ export function useTimeControl() {
     setMinuteOfDay,
     setCalendarDate,
     togglePlay,
+    stopPlay,
   };
 }

@@ -1,0 +1,733 @@
+"use client";
+
+import { useEffect, useRef, useCallback } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import {
+  CHICAGO_CENTER,
+  CHICAGO_MAX_BOUNDS,
+  INITIAL_ZOOM,
+  INITIAL_PITCH,
+  INITIAL_BEARING,
+  DEFAULT_ZOOM,
+  DEFAULT_PITCH,
+  DEFAULT_BEARING,
+  NEIGHBORHOOD_LABELS,
+  SUNLIT_COLOR,
+  SHADED_COLOR,
+} from "@/lib/constants";
+import {
+  getMapboxSkyPosition,
+  getSunColor,
+  getSunIntensity,
+  isSunUp,
+  getSunPosition,
+} from "@/lib/suncalc-utils";
+import type { PatioWithSunStatus } from "@/lib/types";
+import { isOpenAt } from "@/lib/hours";
+
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+
+interface MapInstanceProps {
+  onMapReady: (map: mapboxgl.Map) => void;
+  onShadeMapReady: (shadeMap: unknown) => void;
+  patiosWithStatus: PatioWithSunStatus[];
+  selectedPatioId: string | null;
+  onPatioClick: (id: string) => void;
+  onOpenDetail: (id: string) => void;
+  date: Date;
+}
+
+let useLightsAPI = true; // try v3 setLights first, fall back to setLight
+
+function updateSunLighting(map: mapboxgl.Map, date: Date) {
+  try {
+    const sunUp = isSunUp(date);
+    const sunColor = getSunColor(date);
+    const intensity = getSunIntensity(date);
+    const { azimuthDegrees, altitudeDegrees } = getSunPosition(date);
+
+    if (useLightsAPI) {
+      try {
+        // Mapbox GL v3 setLights — enables real ground shadows from buildings
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map as any).setLights([
+          {
+            id: "sun",
+            type: "directional",
+            properties: {
+              direction: [azimuthDegrees, sunUp ? Math.max(5, altitudeDegrees) : 80],
+              color: sunUp ? sunColor : "#111133",
+              intensity: sunUp ? intensity : 0,
+              "cast-shadows": true,
+              "shadow-intensity": sunUp ? 1.0 : 0,
+            },
+          },
+          {
+            id: "ambient",
+            type: "ambient",
+            properties: {
+              color: sunUp ? "#8090b0" : "#1a1a3e",
+              intensity: sunUp ? 0.1 : 0.15,
+            },
+          },
+        ]);
+      } catch {
+        // v3 setLights not available, fall back permanently
+        useLightsAPI = false;
+        map.setLight({
+          anchor: "map",
+          color: sunUp ? sunColor : "#111133",
+          intensity: sunUp ? intensity : 0.1,
+          position: [1.5, azimuthDegrees, sunUp ? Math.max(10, 90 - altitudeDegrees) : 80],
+        });
+      }
+    } else {
+      map.setLight({
+        anchor: "map",
+        color: sunUp ? sunColor : "#111133",
+        intensity: sunUp ? intensity : 0.1,
+        position: [1.5, azimuthDegrees, sunUp ? Math.max(10, 90 - altitudeDegrees) : 80],
+      });
+    }
+
+    // Update sky if present
+    if (map.getLayer("sky-layer")) {
+      const [skyAz, skyPolar] = getMapboxSkyPosition(date);
+      map.setPaintProperty("sky-layer", "sky-atmosphere-sun", [skyAz, skyPolar]);
+      map.setPaintProperty(
+        "sky-layer",
+        "sky-atmosphere-sun-intensity",
+        sunUp ? (altitudeDegrees < 15 ? 8 : 5) : 0
+      );
+    }
+
+    // Atmospheric fog
+    if (sunUp && altitudeDegrees < 15) {
+      map.setFog({
+        color: "rgb(60, 40, 20)",
+        "high-color": "rgb(50, 30, 50)",
+        "horizon-blend": 0.08,
+        "space-color": "rgb(20, 15, 30)",
+        "star-intensity": 0,
+      });
+    } else if (sunUp) {
+      map.setFog({
+        color: "rgb(30, 30, 50)",
+        "high-color": "rgb(40, 40, 70)",
+        "horizon-blend": 0.06,
+        "space-color": "rgb(15, 15, 30)",
+        "star-intensity": 0,
+      });
+    } else {
+      map.setFog({
+        color: "rgb(10, 10, 25)",
+        "high-color": "rgb(15, 15, 35)",
+        "horizon-blend": 0.1,
+        "space-color": "rgb(5, 5, 15)",
+        "star-intensity": 0.5,
+      });
+    }
+  } catch (err) {
+    console.warn("Sun lighting update failed:", err);
+  }
+}
+
+export default function MapInstance({
+  onMapReady,
+  onShadeMapReady,
+  patiosWithStatus,
+  selectedPatioId,
+  onPatioClick,
+  onOpenDetail,
+  date,
+}: MapInstanceProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const shadeMapRef = useRef<unknown>(null);
+  const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const hasZoomedIn = useRef(false);
+  const clickCount = useRef(0);
+  const onOpenDetailRef = useRef(onOpenDetail);
+  onOpenDetailRef.current = onOpenDetail;
+
+  const updatePatioLayers = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource("patios")) return;
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: patiosWithStatus.map((p) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+        properties: {
+          id: p.id,
+          name: p.name,
+          address: p.address,
+          inSun: p.inSun,
+          sunTag: p.sunTag || "",
+          selected: p.id === selectedPatioId,
+          rooftop: p.rooftop || false,
+          isOpen: isOpenAt(p.openingHours, date) === true,
+          isNight: !isSunUp(date),
+        },
+      })),
+    };
+
+    (map.getSource("patios") as mapboxgl.GeoJSONSource).setData(geojson);
+  }, [patiosWithStatus, selectedPatioId, date]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = new mapboxgl.Map({
+      container: containerRef.current,
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
+      center: CHICAGO_CENTER,
+      zoom: INITIAL_ZOOM,
+      pitch: INITIAL_PITCH,
+      bearing: INITIAL_BEARING,
+      antialias: true,
+      maxBounds: CHICAGO_MAX_BOUNDS,
+      minZoom: 11.5,
+      maxZoom: 20,
+    });
+
+    map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    // First 3 clicks: zoom in progressively, then switch to 3D tilted view
+    const handleZoomClick = (e: mapboxgl.MapMouseEvent) => {
+      clickCount.current++;
+      const count = clickCount.current;
+
+      if (count === 1) {
+        map.flyTo({
+          center: e.lngLat,
+          zoom: 13.5,
+          pitch: 0,
+          bearing: 0,
+          duration: 1200,
+        });
+      } else if (count === 2) {
+        map.flyTo({
+          center: e.lngLat,
+          zoom: 14.5,
+          pitch: 20,
+          bearing: DEFAULT_BEARING,
+          duration: 1200,
+        });
+      } else if (count === 3) {
+        hasZoomedIn.current = true;
+        map.off("click", handleZoomClick);
+        map.flyTo({
+          center: e.lngLat,
+          zoom: DEFAULT_ZOOM,
+          pitch: DEFAULT_PITCH,
+          bearing: DEFAULT_BEARING,
+          duration: 2000,
+        });
+      }
+    };
+    map.on("click", handleZoomClick);
+
+    map.on("load", () => {
+      console.log("Map loaded successfully");
+
+      // ── Neighborhood labels ──
+      map.addSource("neighborhoods", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: NEIGHBORHOOD_LABELS.map((n) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: n.coordinates },
+            properties: { name: n.name },
+          })),
+        },
+      });
+
+      map.addLayer({
+        id: "neighborhood-labels",
+        type: "symbol",
+        source: "neighborhoods",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 14, 13, 18, 15, 14, 17, 0,
+          ],
+          "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-letter-spacing": 0.15,
+          "text-allow-overlap": false,
+          "text-padding": 8,
+        },
+        paint: {
+          "text-color": "rgba(255, 255, 255, 0.95)",
+          "text-halo-color": "rgba(0, 0, 0, 0.9)",
+          "text-halo-width": 2.5,
+          "text-halo-blur": 0.5,
+        },
+      });
+
+      // ── 3D Buildings ──
+      // Find insert position (below first label layer)
+      const allLayers = map.getStyle().layers || [];
+      const labelLayer = allLayers.find(
+        (l) => l.type === "symbol" && l.layout?.["text-field"]
+      )?.id;
+
+      // Add our 3D building layer (the style may or may not have one already,
+      // but adding a second fill-extrusion on the same source-layer is fine —
+      // ours will render on top with correct heights)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      map.addLayer(
+        {
+          id: "3d-buildings",
+          source: "composite",
+          "source-layer": "building",
+          filter: ["==", "extrude", "true"],
+          type: "fill-extrusion",
+          minzoom: 12,
+          paint: {
+            "fill-extrusion-color": [
+              "interpolate", ["linear"], ["get", "height"],
+              0, "#8899aa",
+              50, "#99aabb",
+              150, "#aabbcc",
+              300, "#bbccdd",
+            ],
+            "fill-extrusion-height": ["get", "height"],
+            "fill-extrusion-base": ["get", "min_height"],
+            "fill-extrusion-opacity": 0.9,
+            "fill-extrusion-ambient-occlusion-intensity": 0.75,
+            "fill-extrusion-ambient-occlusion-radius": 5,
+          } as any,
+        },
+        labelLayer
+      );
+
+      // ── Sky layer ──
+      try {
+        const [skyAz, skyPolar] = getMapboxSkyPosition(date);
+        map.addLayer({
+          id: "sky-layer",
+          type: "sky",
+          paint: {
+            "sky-type": "atmosphere",
+            "sky-atmosphere-sun": [skyAz, skyPolar],
+            "sky-atmosphere-sun-intensity": 5,
+          },
+        });
+      } catch (err) {
+        console.warn("Sky layer failed:", err);
+      }
+
+      // ── Sun lighting ──
+      updateSunLighting(map, date);
+
+      // ── Patio layers ──
+      map.addSource("patios", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      // Sun glow (soft outer ring on sunlit patios — daytime only)
+      map.addLayer({
+        id: "patios-sun-glow",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "inSun"], true], ["==", ["get", "isNight"], false]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 6, 13, 10, 16, 18, 20, 30,
+          ],
+          "circle-color": "#FFB800",
+          "circle-opacity": 0.2,
+          "circle-blur": 1,
+        },
+      });
+
+      // Shaded patios — closed/unknown (daytime)
+      map.addLayer({
+        id: "patios-shaded",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "inSun"], false], ["==", ["get", "isNight"], false], ["==", ["get", "isOpen"], false]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 3, 13, 4, 16, 7, 20, 12,
+          ],
+          "circle-color": SHADED_COLOR,
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#333",
+        },
+      });
+
+      // Shaded patios — open (daytime, bigger)
+      map.addLayer({
+        id: "patios-shaded-open",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "inSun"], false], ["==", ["get", "isNight"], false], ["==", ["get", "isOpen"], true]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 4, 13, 5.5, 16, 9, 20, 15,
+          ],
+          "circle-color": SHADED_COLOR,
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#333",
+        },
+      });
+
+      // Sunlit patios — closed/unknown (daytime)
+      map.addLayer({
+        id: "patios-sunlit",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "inSun"], true], ["==", ["get", "isNight"], false], ["==", ["get", "isOpen"], false]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 3.5, 13, 5, 16, 9, 20, 14,
+          ],
+          "circle-color": SUNLIT_COLOR,
+          "circle-opacity": 1,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#FFD700",
+        },
+      });
+
+      // Sunlit patios — open (daytime, bigger)
+      map.addLayer({
+        id: "patios-sunlit-open",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "inSun"], true], ["==", ["get", "isNight"], false], ["==", ["get", "isOpen"], true]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 4.5, 13, 6.5, 16, 12, 20, 18,
+          ],
+          "circle-color": SUNLIT_COLOR,
+          "circle-opacity": 1,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#FFD700",
+        },
+      });
+
+      // Nighttime: open patios glow green
+      map.addLayer({
+        id: "patios-night-open",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "isNight"], true], ["==", ["get", "isOpen"], true]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 4.5, 13, 6.5, 16, 11, 20, 16,
+          ],
+          "circle-color": "#22c55e",
+          "circle-opacity": 1,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#16a34a",
+        },
+      });
+
+      // Nighttime: closed/unknown patios dim
+      map.addLayer({
+        id: "patios-night-closed",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "isNight"], true], ["==", ["get", "isOpen"], false]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 2.5, 13, 3.5, 16, 6, 20, 10,
+          ],
+          "circle-color": "#555",
+          "circle-opacity": 0.5,
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "#333",
+        },
+      });
+
+      // Open ring — green outline on open patios (daytime only)
+      map.addLayer({
+        id: "patios-open-ring",
+        type: "circle",
+        source: "patios",
+        filter: ["all", ["==", ["get", "isOpen"], true], ["==", ["get", "isNight"], false]],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 6.5, 13, 8.5, 16, 15, 20, 22,
+          ],
+          "circle-color": "transparent",
+          "circle-stroke-width": [
+            "interpolate", ["linear"], ["zoom"],
+            11.5, 1.5, 16, 2.5, 20, 3,
+          ],
+          "circle-stroke-color": "#22c55e",
+          "circle-stroke-opacity": 0.9,
+        },
+      });
+
+      // Selected ring
+      map.addLayer({
+        id: "patios-selected",
+        type: "circle",
+        source: "patios",
+        filter: ["==", ["get", "selected"], true],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            12, 8, 16, 14, 20, 20,
+          ],
+          "circle-color": "transparent",
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#fff",
+        },
+      });
+
+      // ── Click handlers ──
+      for (const layerId of ["patios-sunlit", "patios-sunlit-open", "patios-shaded", "patios-shaded-open", "patios-night-open", "patios-night-closed"]) {
+        map.on("click", layerId, (e) => {
+          hasZoomedIn.current = true;
+          map.off("click", handleZoomClick);
+
+          const feature = e.features?.[0];
+          if (feature?.properties?.id) {
+            onPatioClick(feature.properties.id);
+            showPopup(map, e.lngLat, feature.properties);
+          }
+        });
+        map.on("dblclick", layerId, (e) => {
+          e.preventDefault();
+          const feature = e.features?.[0];
+          if (feature?.properties?.id) {
+            onOpenDetailRef.current(feature.properties.id);
+          }
+        });
+        map.on("mouseenter", layerId, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", layerId, () => {
+          map.getCanvas().style.cursor = "";
+        });
+      }
+
+      // ── Auto pitch based on zoom ──
+      // Zoom out → flatten to overhead; Zoom in → tilt to 3D
+      map.on("zoomend", () => {
+        const zoom = map.getZoom();
+        const pitch = map.getPitch();
+
+        if (zoom < 13.5 && pitch > 5) {
+          map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+        } else if (zoom >= 14.5 && pitch < 10 && hasZoomedIn.current) {
+          map.easeTo({ pitch: DEFAULT_PITCH, bearing: DEFAULT_BEARING, duration: 800 });
+        }
+      });
+
+      mapRef.current = map;
+      onMapReady(map);
+
+      // Load ShadeMap
+      loadShadeMap(map);
+    });
+
+    map.on("error", (e) => {
+      console.error("Mapbox error:", e.error);
+    });
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Close popup when patio is deselected
+  useEffect(() => {
+    if (!selectedPatioId) {
+      popupRef.current?.remove();
+    }
+  }, [selectedPatioId]);
+
+  // Update patio layer data
+  useEffect(() => {
+    updatePatioLayers();
+  }, [updatePatioLayers]);
+
+  // Update sun lighting + ShadeMap when time changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map) updateSunLighting(map, date);
+
+    const sm = shadeMapRef.current as { setDate?: (d: Date) => void } | null;
+    if (sm?.setDate) sm.setDate(date);
+  }, [date]);
+
+  async function loadShadeMap(map: mapboxgl.Map) {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_SHADEMAP_KEY;
+      if (!apiKey) return;
+
+      await map.once("idle");
+
+      const ShadeMap = (await import("mapbox-gl-shadow-simulator")).default;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sm = new (ShadeMap as any)({
+        date: date,
+        color: "#000a1a",
+        opacity: 0.7,
+        apiKey,
+        terrainSource: {
+          maxZoom: 15,
+          tileSize: 256,
+          getSourceUrl: ({ x, y, z }: { x: number; y: number; z: number }) =>
+            `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`,
+          getElevation: ({ r, g, b }: { r: number; g: number; b: number }) =>
+            (r * 256 + g + b / 256) - 32768,
+        },
+        getFeatures: async () => {
+          await map.once("idle");
+          try {
+            return map.queryRenderedFeatures({ layers: ["3d-buildings"] });
+          } catch {
+            return [];
+          }
+        },
+      });
+
+      sm.addTo(map);
+      shadeMapRef.current = sm;
+      onShadeMapReady(sm);
+      console.log("ShadeMap loaded successfully");
+    } catch (err) {
+      console.warn("ShadeMap failed to load:", err);
+    }
+  }
+
+  function showPopup(
+    map: mapboxgl.Map,
+    lngLat: mapboxgl.LngLat,
+    props: Record<string, unknown>
+  ) {
+    popupRef.current?.remove();
+
+    const inSun = props.inSun;
+    const statusIcon = inSun ? "\u2600\uFE0F" : "\uD83C\uDF25\uFE0F";
+    const statusText = inSun ? "In Sun" : "In Shade";
+    const statusClass = inSun ? "sun" : "shade";
+    const sunTag = props.sunTag ? String(props.sunTag) : "";
+    const isRooftop = props.rooftop === true || props.rooftop === "true";
+    const photoId = `popup-photo-${props.id}`;
+    const hoursId = `popup-hours-${props.id}`;
+    const busynessId = `popup-busyness-${props.id}`;
+    const detailsBtnId = `popup-details-${props.id}`;
+
+    popupRef.current = new mapboxgl.Popup({
+      closeButton: true,
+      maxWidth: "280px",
+      className: "patio-popup",
+    })
+      .setLngLat(lngLat)
+      .setHTML(
+        `<div class="popup-content">
+          <div id="${photoId}" class="popup-photo-container"></div>
+          <h3>${props.name}</h3>
+          ${props.address ? `<p class="popup-address">${props.address}</p>` : ""}
+          <div class="popup-badges">
+            <span class="popup-status ${statusClass}">${statusIcon} ${statusText}</span>
+            ${isRooftop ? '<span class="popup-rooftop">Rooftop</span>' : ""}
+            <span id="${hoursId}"></span>
+            <span id="${busynessId}"></span>
+          </div>
+          ${sunTag ? `<span class="popup-sun-tag">${sunTag}</span>` : ""}
+          <button id="${detailsBtnId}" class="popup-details-btn">Details</button>
+        </div>`
+      )
+      .addTo(map);
+
+    // Attach Details button listener
+    const detailsBtn = document.getElementById(detailsBtnId);
+    if (detailsBtn) {
+      detailsBtn.addEventListener("click", () => {
+        onOpenDetailRef.current(String(props.id));
+        popupRef.current?.remove();
+      });
+    }
+
+    // Fetch and inject photo + hours
+    const params = new URLSearchParams({
+      name: String(props.name),
+      lat: String(lngLat.lat),
+      lng: String(lngLat.lng),
+      patioId: String(props.id),
+    });
+    fetch(`/api/patio-photo?${params}`)
+      .then((res) => res.json())
+      .then((data: { photoUrl: string | null; hours: string | null; isOpen: boolean | null }) => {
+        const photoContainer = document.getElementById(photoId);
+        if (photoContainer && data.photoUrl) {
+          const img = document.createElement("img");
+          img.src = data.photoUrl;
+          img.alt = String(props.name);
+          img.className = "popup-photo";
+          img.onerror = () => img.remove();
+          photoContainer.appendChild(img);
+        }
+
+        const hoursEl = document.getElementById(hoursId);
+        if (hoursEl && data.hours) {
+          const openClass = data.isOpen ? "popup-hours-open" : "popup-hours-closed";
+          const label = data.isOpen ? `Open \u00B7 ${data.hours}` : `Closed \u00B7 ${data.hours}`;
+          hoursEl.className = openClass;
+          hoursEl.textContent = label;
+        }
+      })
+      .catch(() => {});
+
+    // Fetch and inject busyness badge
+    const busynessParams = new URLSearchParams({
+      name: String(props.name),
+      address: String(props.address || ""),
+      patioId: String(props.id),
+    });
+    fetch(`/api/patio-busyness?${busynessParams}`)
+      .then((res) => res.json())
+      .then((data: { forecast: number[] | null }) => {
+        const el = document.getElementById(busynessId);
+        if (!el || !data.forecast) return;
+        const hour = Math.floor(date.getHours() + date.getMinutes() / 60);
+        const value = data.forecast[hour];
+        if (value == null) return;
+        let label: string;
+        let cls: string;
+        if (value > 70) {
+          label = "Busy";
+          cls = "popup-busyness-busy";
+        } else if (value >= 40) {
+          label = "Moderate";
+          cls = "popup-busyness-moderate";
+        } else {
+          label = "Quiet";
+          cls = "popup-busyness-quiet";
+        }
+        el.className = cls;
+        el.textContent = label;
+      })
+      .catch(() => {});
+  }
+
+  return (
+    <div ref={containerRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }} />
+  );
+}

@@ -63,5 +63,5 @@ export const SUNLIT_COLOR = "#FFB800";
 export const SHADED_COLOR = "#9CA3AF";
 export const SUNLIT_COLOR_PULSE = "#FFD700";
 
-export const TIME_STEP_MINUTES = 5;
-export const ANIMATION_INTERVAL_MS = 150;
+export const TIME_STEP_MINUTES = 60;
+export const ANIMATION_INTERVAL_MS = 3000;

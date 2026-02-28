@@ -46,8 +46,8 @@ export function TimeSlider({
 
   return (
     <div className="relative space-y-1.5">
-      {/* Large floating time popup — appears during drag, follows thumb */}
-      {isDragging && (
+      {/* Large floating time popup — appears during drag or playback, follows thumb */}
+      {(isDragging || isPlaying) && (
         <div
           className="absolute z-20 pointer-events-none -translate-x-1/2"
           style={{

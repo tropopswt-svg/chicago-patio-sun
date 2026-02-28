@@ -476,6 +476,15 @@ body {
   }
 }
 
+/* iPhone safe area — extra padding for home indicator on bottom sheet */
+@media (max-width: 639px) {
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .pb-safe {
+      padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
+    }
+  }
+}
+
 /* Custom scrollbar — thinner liquid glass style */
 .overflow-y-auto::-webkit-scrollbar {
   width: 3px;

@@ -18,8 +18,8 @@ function dateFromMinute(base: Date, minute: number): Date {
 
 export function useTimeControl() {
   const now = new Date();
-  const [date, setDate] = useState<Date>(now);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [date, setDate] = useState<Date>(() => dateFromMinute(now, 7 * 60));
+  const [isPlaying, setIsPlaying] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const minuteOfDay = getMinuteOfDay(date);

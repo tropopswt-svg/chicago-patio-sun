@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Crosshair, Plus, ZoomOut } from "lucide-react";
+import { Crosshair, Plus, ZoomOut, X, Sun } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
 import { MapProvider, useMapContext } from "@/components/providers/MapProvider";
@@ -18,12 +18,11 @@ import { SubmitPatioForm } from "@/components/ui/SubmitPatioForm";
 import { PatioDetailPanel } from "@/components/ui/PatioDetailPanel";
 import { usePatioSunStatus } from "@/hooks/usePatioSunStatus";
 import { useWeatherData } from "@/hooks/useWeatherData";
-import { decodeWeatherCode } from "@/lib/weather-utils";
+import { decodeWeatherCode, getHourlySunFactor } from "@/lib/weather-utils";
 import { CHICAGO_CENTER, DEFAULT_ZOOM, DEFAULT_PITCH, DEFAULT_BEARING, NEIGHBORHOOD_LABELS } from "@/lib/constants";
 import { getNeighborhood, isFood } from "@/lib/neighborhoods";
 import { isOpenAt } from "@/lib/hours";
 import type { QuickFilterState, PatioWithSunStatus } from "@/lib/types";
-import type { HoursFilter } from "@/components/ui/Sidebar";
 
 const MapInstance = dynamic(
   () => import("@/components/map/MapInstance"),
@@ -38,7 +37,8 @@ function AppContent() {
   const [submitFormOpen, setSubmitFormOpen] = useState(false);
   const [detailPatio, setDetailPatio] = useState<PatioWithSunStatus | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [hoursFilter, setHoursFilter] = useState<HoursFilter>("all");
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [noSunDismissed, setNoSunDismissed] = useState(false);
   const [quickFilter, setQuickFilter] = useState<QuickFilterState>({
     neighborhoods: [],
     food: "all",
@@ -48,7 +48,7 @@ function AppContent() {
     lateNight: false,
   });
 
-  const { timeState, sunriseMinute, sunsetMinute, setMinuteOfDay, togglePlay, stopPlay } =
+  const { timeState, sunriseMinute, sunsetMinute, setMinuteOfDay, setCalendarDate, togglePlay, stopPlay } =
     useTimeControl();
   const { patios, isLoading, refreshPatios } = usePatioData();
   const { buildingIndex } = useBuildingData();
@@ -70,17 +70,16 @@ function AppContent() {
     [patioNeighborhoods]
   );
 
-  // Apply quick filters + sidebar hours filter — both remove dots from the map
+  // Apply quick filters — remove dots from the map
   const filteredPatios = useMemo(() => {
     const hasHood = quickFilter.neighborhoods.length > 0;
     const hasFood = quickFilter.food !== "all";
     const hasSetting = quickFilter.setting !== "all";
     const hasSun = quickFilter.sunPreference !== "all";
     const hasQuickHours = quickFilter.openOnly;
-    const hasSidebarHours = hoursFilter !== "all";
     const hasLateNight = quickFilter.lateNight;
 
-    if (!hasHood && !hasFood && !hasSetting && !hasSun && !hasQuickHours && !hasSidebarHours && !hasLateNight)
+    if (!hasHood && !hasFood && !hasSetting && !hasSun && !hasQuickHours && !hasLateNight)
       return patiosWithStatus;
 
     return patiosWithStatus.filter((p) => {
@@ -103,18 +102,13 @@ function AppContent() {
         if (quickFilter.sunPreference === "rooftop" && !p.rooftop) return false;
       }
       if (hasLateNight && !p.lateNight) return false;
-      // Hours filtering from either quick filter or sidebar toggle
-      if (hasQuickHours || hasSidebarHours) {
+      if (hasQuickHours) {
         const open = isOpenAt(p.openingHours, timeState.date);
-        if (hasQuickHours && open === false) return false;
-        if (hasSidebarHours) {
-          if (hoursFilter === "open" && open === false) return false;
-          if (hoursFilter === "closed" && open !== false) return false;
-        }
+        if (open === false) return false;
       }
       return true;
     });
-  }, [patiosWithStatus, quickFilter, hoursFilter, patioNeighborhoods, timeState.date]);
+  }, [patiosWithStatus, quickFilter, patioNeighborhoods, timeState.date]);
 
   const filteredSunCount = useMemo(
     () => filteredPatios.filter((p) => p.inSun).length,
@@ -135,6 +129,20 @@ function AppContent() {
       icon,
     };
   }, [weather]);
+
+  // Check if today is expected to have little/no sun (avg daytime sun factor < 0.3)
+  const isLowSunDay = useMemo(() => {
+    if (!weather?.hourly) return false;
+    const sunriseH = Math.floor(sunriseMinute / 60);
+    const sunsetH = Math.ceil(sunsetMinute / 60);
+    let total = 0;
+    let count = 0;
+    for (let h = sunriseH; h <= sunsetH; h++) {
+      total += getHourlySunFactor(weather.hourly, h);
+      count++;
+    }
+    return count > 0 && total / count < 0.3;
+  }, [weather, sunriseMinute, sunsetMinute]);
 
   const handleMapReady = useCallback(
     (map: mapboxgl.Map) => {
@@ -248,6 +256,7 @@ function AppContent() {
         <Header
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
+          onTitleClick={() => setAboutOpen(true)}
         />
         <div className="mt-2">
           <QuickFilter
@@ -326,7 +335,7 @@ function AppContent() {
       </div>
 
       {/* Right side: Find a Bar + Zoom out */}
-      <div className="absolute right-3 bottom-28 sm:top-[55%] sm:-translate-y-1/2 sm:bottom-auto z-10 flex flex-col gap-2 items-end">
+      <div className="absolute right-3 top-[45%] -translate-y-1/2 z-10 flex flex-col gap-2 items-end">
         {/* Find a Bar */}
         <button
           onClick={() => {
@@ -353,6 +362,31 @@ function AppContent() {
         )}
       </div>
 
+      {/* "No sun today" toast */}
+      {isLowSunDay && !noSunDismissed && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 animate-slide-up">
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm"
+            style={{
+              background: "linear-gradient(160deg, rgba(15, 15, 35, 0.5) 0%, rgba(255, 255, 255, 0.06) 100%)",
+              backdropFilter: "blur(40px) saturate(200%)",
+              WebkitBackdropFilter: "blur(40px) saturate(200%)",
+              border: "0.5px solid rgba(255, 255, 255, 0.15)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+            }}
+          >
+            <span className="text-lg">☁️</span>
+            <span className="text-white/70 font-medium">Limited sun expected today</span>
+            <button
+              onClick={() => setNoSunDismissed(true)}
+              className="ml-1 text-white/30 hover:text-white/60 transition-colors text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom center: Horizontal Time Slider — hidden when filters or sidebar open */}
       {!filterPanelOpen && !sidebarOpen && (
         <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
@@ -378,8 +412,8 @@ function AppContent() {
         isLoading={isLoading}
         currentTime={timeState.date}
         minuteOfDay={timeState.minuteOfDay}
-        hoursFilter={hoursFilter}
-        onHoursFilterChange={setHoursFilter}
+        onDateChange={setCalendarDate}
+        onTimeChange={setMinuteOfDay}
       />
 
       {/* Patio Detail Panel */}
@@ -398,6 +432,51 @@ function AppContent() {
         onClose={() => setSubmitFormOpen(false)}
         onSuccess={refreshPatios}
       />
+
+      {/* About popup */}
+      {aboutOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setAboutOpen(false)} />
+          <div className="glass-panel relative rounded-[24px] p-6 max-w-sm w-full animate-slide-up">
+            <button
+              onClick={() => setAboutOpen(false)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <Sun className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white/95">Chicago Booze Map</h2>
+                <p className="text-[11px] text-white/40">Patio Sunlight Tracker</p>
+              </div>
+            </div>
+            <div className="space-y-3 text-sm text-white/70 leading-relaxed">
+              <p>
+                Find the perfect patio, rooftop, or bar in Chicago — and know
+                exactly when it&apos;ll be sunny or shaded.
+              </p>
+              <p>
+                Drag the time slider to see real-time shadow simulations based on
+                building heights and sun position. Filter by neighborhood, vibe,
+                or whether you want sun or shade.
+              </p>
+              <p>
+                At night, every spot lights up green — because Chicago&apos;s
+                nightlife doesn&apos;t need sunshine.
+              </p>
+            </div>
+            <button
+              onClick={() => setAboutOpen(false)}
+              className="mt-5 w-full py-2.5 rounded-full bg-white/15 text-sm font-semibold text-white/90 hover:bg-white/25 transition-all"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

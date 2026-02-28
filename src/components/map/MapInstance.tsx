@@ -380,6 +380,9 @@ export default function MapInstance({
         },
       });
 
+      // Move neighborhood labels above patio dots
+      map.moveLayer("neighborhood-labels");
+
       // ── Click handlers ──
       map.on("click", "patios-base", (e) => {
         hasZoomedIn.current = true;

@@ -244,7 +244,7 @@ function AppContent() {
       <SunIndicator date={timeState.date} mapBearing={mapBearing} />
 
       {/* Top-left: Header + Quick Filter */}
-      <div className="absolute top-4 left-4 z-10 w-56 sm:w-72">
+      <div className="absolute top-3 left-3 z-10 w-44 sm:w-72">
         <Header
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
@@ -282,7 +282,7 @@ function AppContent() {
                 setFilterPanelOpen(false);
               }}
               title={t.label}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+              className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
                 quickFilter.setting === t.value
                   ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                   : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -314,11 +314,11 @@ function AppContent() {
         </div>
         {weatherDisplay && (
           <div className="pointer-events-none select-none">
-            <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
-              <span className="text-lg">{weatherDisplay.icon}</span>
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
+              <span className="text-sm sm:text-lg">{weatherDisplay.icon}</span>
               <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
-              <span className="text-white/30">{weatherDisplay.label}</span>
-              <span className="text-white/15">|</span>
+              <span className="text-white/30 hidden sm:inline">{weatherDisplay.label}</span>
+              <span className="text-white/15 hidden sm:inline">|</span>
               <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
             </div>
           </div>
@@ -326,28 +326,28 @@ function AppContent() {
       </div>
 
       {/* Right side: Find a Bar + Zoom out */}
-      <div className="absolute right-4 top-[55%] -translate-y-1/2 z-10 flex flex-col gap-2 items-end">
-        {/* Find a Bar — big box button */}
+      <div className="absolute right-3 bottom-28 sm:top-[55%] sm:-translate-y-1/2 sm:bottom-auto z-10 flex flex-col gap-2 items-end">
+        {/* Find a Bar */}
         <button
           onClick={() => {
             setSidebarOpen((v) => !v);
             setFilterPanelOpen(false);
           }}
-          className="glass-panel flex flex-col items-center justify-center gap-1 px-5 py-4 rounded-2xl text-base font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
+          className="glass-panel flex items-center justify-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
           title="Browse all patios"
         >
-          <span className="text-2xl">🍺</span>
-          <span className="text-xs">{sidebarOpen ? "Close" : "Find a Bar"}</span>
+          <span className="text-lg sm:text-2xl">🍺</span>
+          <span className="text-[10px] sm:text-xs">{sidebarOpen ? "Close" : "Find a Bar"}</span>
         </button>
 
         {/* Zoom-out button */}
         {selectedPatioId && (
           <button
             onClick={handleZoomOut}
-            className="glass-panel flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
+            className="glass-panel flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
             title="Zoom back out"
           >
-            <ZoomOut className="w-4 h-4" />
+            <ZoomOut className="w-3.5 h-3.5" />
             <span>Zoom out</span>
           </button>
         )}

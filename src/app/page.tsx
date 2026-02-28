@@ -23,7 +23,6 @@ import { decodeWeatherCode } from "@/lib/weather-utils";
 import { CHICAGO_CENTER, DEFAULT_ZOOM, DEFAULT_PITCH, DEFAULT_BEARING, NEIGHBORHOOD_LABELS } from "@/lib/constants";
 import { getNeighborhood, isFood } from "@/lib/neighborhoods";
 import { isOpenAt } from "@/lib/hours";
-import type { LegendWeather } from "@/components/ui/Legend";
 import type { QuickFilterState, PatioWithSunStatus } from "@/lib/types";
 import type { HoursFilter } from "@/components/ui/Sidebar";
 
@@ -117,14 +116,14 @@ function AppContent() {
     });
   }, [patiosWithStatus, quickFilter, hoursFilter, patioNeighborhoods, timeState.date]);
 
-  const legendWeather = useMemo((): LegendWeather | null => {
+  const weatherDisplay = useMemo(() => {
     if (!weather) return null;
     const { label, icon } = decodeWeatherCode(weather.current.weatherCode);
     return {
-      temperature: weather.current.temperature,
+      temperature: Math.round(weather.current.temperature),
       uvIndex: weather.current.uvIndex,
-      conditionLabel: label,
-      conditionIcon: icon,
+      label,
+      icon,
     };
   }, [weather]);
 
@@ -296,7 +295,7 @@ function AppContent() {
 
       {/* Bottom-left stack: Legend + Toggle above time slider */}
       <div className="absolute bottom-[170px] left-4 z-10 flex flex-col gap-2 items-start">
-        <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} weather={legendWeather} />
+        <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} />
         <div className="glass-panel rounded-full flex p-1 gap-0.5">
           <button
             onClick={() =>
@@ -331,8 +330,21 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Bottom: Time Slider */}
-      <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:w-[480px] z-10">
+      {/* Weather overlay — transparent floating text */}
+      {weatherDisplay && (
+        <div className="absolute bottom-[100px] right-4 z-10 pointer-events-none select-none">
+          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.3)" }}>
+            <span className="text-lg">{weatherDisplay.icon}</span>
+            <span className="text-white/70 font-medium">{weatherDisplay.temperature}°F</span>
+            <span className="text-white/45">{weatherDisplay.label}</span>
+            <span className="text-white/20">|</span>
+            <span className="text-white/45">UV {weatherDisplay.uvIndex}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom: Time Slider — half-width on mobile, no panel */}
+      <div className="absolute bottom-4 left-4 w-[45vw] sm:w-[320px] z-10">
         <TimeSlider
           timeState={timeState}
           sunriseMinute={sunriseMinute}

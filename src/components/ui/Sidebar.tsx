@@ -91,7 +91,7 @@ export function Sidebar({
         </div>
 
         {/* Stats bar */}
-        <div className="order-2 sm:order-1 px-4 pt-2 sm:pt-4 pb-2">
+        <div className="order-2 px-4 pt-2 sm:pt-4 pb-2">
           <div className="flex items-center gap-3 text-sm">
             <span className="text-amber-400/90 font-medium">
               ☀️ {sunCount} in sun
@@ -103,8 +103,56 @@ export function Sidebar({
           </div>
         </div>
 
+        {/* Search */}
+        <div className="order-3 px-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+            <input
+              type="text"
+              placeholder="Search patios..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="glass-input pl-9 pr-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="order-4 px-4 pb-2 flex gap-1">
+          {filters.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={cn(
+                "glass-pill",
+                filter === f.value && "glass-pill-amber"
+              )}
+            >
+              {f.icon}
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Hours filter tabs */}
+        <div className="order-5 px-4 pb-2 flex gap-1">
+          {hoursFilters.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => onHoursFilterChange(f.value)}
+              className={cn(
+                "glass-pill",
+                hoursFilter === f.value && "glass-pill-green"
+              )}
+            >
+              {f.icon}
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {/* Patio list */}
-        <div className="order-3 sm:order-5 flex-1 overflow-y-auto px-2 pb-4 space-y-1 min-h-0">
+        <div className="order-6 flex-1 overflow-y-auto px-2 pb-4 space-y-1 min-h-0 pb-safe">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-white/15 border-t-white/50 rounded-full animate-spin" />
@@ -124,54 +172,6 @@ export function Sidebar({
               />
             ))
           )}
-        </div>
-
-        {/* Search */}
-        <div className="order-5 sm:order-2 px-4 pb-2 pt-2 border-t border-white/10 sm:border-t-0 sm:pt-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-            <input
-              type="text"
-              placeholder="Search patios..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="glass-input pl-9 pr-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Filter tabs */}
-        <div className="order-6 sm:order-3 px-4 pb-2 flex gap-1">
-          {filters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={cn(
-                "glass-pill",
-                filter === f.value && "glass-pill-amber"
-              )}
-            >
-              {f.icon}
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Hours filter tabs */}
-        <div className="order-7 sm:order-4 px-4 pb-3 flex gap-1 pb-safe">
-          {hoursFilters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => onHoursFilterChange(f.value)}
-              className={cn(
-                "glass-pill",
-                hoursFilter === f.value && "glass-pill-green"
-              )}
-            >
-              {f.icon}
-              {f.label}
-            </button>
-          ))}
         </div>
       </div>
     </div>

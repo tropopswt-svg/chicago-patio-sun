@@ -503,6 +503,17 @@ body {
   background: rgba(255, 255, 255, 0.22);
 }
 
+/* Mapbox navigation control — move up from bottom */
+.mapboxgl-ctrl-bottom-right {
+  bottom: 120px !important;
+}
+
+@media (min-width: 640px) {
+  .mapboxgl-ctrl-bottom-right {
+    bottom: 40px !important;
+  }
+}
+
 /* Mapbox navigation control — liquid glass override */
 .mapboxgl-ctrl-group {
   background: linear-gradient(

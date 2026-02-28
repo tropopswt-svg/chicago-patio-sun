@@ -16,10 +16,19 @@ function dateFromMinute(base: Date, minute: number): Date {
   return setSeconds(setMinutes(setHours(base, h), m), 0);
 }
 
+// Initial autoplay: hour-by-hour sweep so user sees the sun move on load
+// Manual play (after any interaction): minute-by-minute for fine control
+const AUTOPLAY_STEP = TIME_STEP_MINUTES; // 60 min
+const AUTOPLAY_INTERVAL = ANIMATION_INTERVAL_MS; // 3s
+const MANUAL_STEP = 1; // 1 min
+const MANUAL_INTERVAL = 100; // 100ms
+
 export function useTimeControl() {
   const now = new Date();
-  const [date, setDate] = useState<Date>(() => dateFromMinute(now, 7 * 60));
+  const initSunrise = getSunriseMinute(now);
+  const [date, setDate] = useState<Date>(() => dateFromMinute(now, initSunrise));
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isAutoplay, setIsAutoplay] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const minuteOfDay = getMinuteOfDay(date);
@@ -27,8 +36,11 @@ export function useTimeControl() {
   const sunriseMinute = getSunriseMinute(date);
   const sunsetMinute = getSunsetMinute(date);
 
+  // User drags slider → stop playing, end autoplay mode
   const setMinuteOfDay = useCallback(
     (minute: number) => {
+      setIsPlaying(false);
+      setIsAutoplay(false);
       setDate((prev) => dateFromMinute(prev, Math.min(Math.max(minute, 0), 1439)));
     },
     []
@@ -41,25 +53,30 @@ export function useTimeControl() {
     });
   }, []);
 
+  // Play button → always manual (minute-by-minute) after first interaction
   const togglePlay = useCallback(() => {
+    setIsAutoplay(false);
     setIsPlaying((prev) => !prev);
   }, []);
 
   const stepForward = useCallback(() => {
     setDate((prev) => {
       const m = getMinuteOfDay(prev);
-      const next = m + TIME_STEP_MINUTES;
+      const step = isAutoplay ? AUTOPLAY_STEP : MANUAL_STEP;
+      const next = m + step;
       if (next > sunsetMinute) {
         setIsPlaying(false);
+        setIsAutoplay(false);
         return dateFromMinute(prev, sunriseMinute);
       }
       return dateFromMinute(prev, next);
     });
-  }, [sunriseMinute, sunsetMinute]);
+  }, [sunriseMinute, sunsetMinute, isAutoplay]);
 
   useEffect(() => {
     if (isPlaying) {
-      intervalRef.current = setInterval(stepForward, ANIMATION_INTERVAL_MS);
+      const interval = isAutoplay ? AUTOPLAY_INTERVAL : MANUAL_INTERVAL;
+      intervalRef.current = setInterval(stepForward, interval);
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -67,7 +84,7 @@ export function useTimeControl() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isPlaying, stepForward]);
+  }, [isPlaying, stepForward, isAutoplay]);
 
   const timeState: TimeState = {
     date,

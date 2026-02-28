@@ -294,36 +294,37 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Top-right: nav buttons */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSubmitFormOpen(true)}
-            className="glass-icon-btn"
-            title="Submit a patio"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleRecenter}
-            className="glass-icon-btn"
-            title="Recenter to Old Town / River North"
-          >
-            <Crosshair className="w-5 h-5" />
-          </button>
-        </div>
+      {/* Top-right: small nav buttons */}
+      <div className="absolute top-3 right-3 z-10 flex gap-1.5">
+        <button
+          onClick={() => setSubmitFormOpen(true)}
+          className="glass-icon-btn"
+          title="Submit a patio"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+        <button
+          onClick={handleRecenter}
+          className="glass-icon-btn"
+          title="Recenter to Old Town / River North"
+        >
+          <Crosshair className="w-5 h-5" />
+        </button>
+      </div>
 
+      {/* Right side: Find a Bar + Zoom out */}
+      <div className="absolute right-4 top-[55%] -translate-y-1/2 z-10 flex flex-col gap-2 items-end">
         {/* Find a Bar — big box button */}
         <button
           onClick={() => {
             setSidebarOpen((v) => !v);
             setFilterPanelOpen(false);
           }}
-          className="glass-panel flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl text-base font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
+          className="glass-panel flex flex-col items-center justify-center gap-1 px-5 py-4 rounded-2xl text-base font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
           title="Browse all patios"
         >
-          <span className="text-xl">🍺</span>
-          <span>{sidebarOpen ? "Close" : "Find a Bar"}</span>
+          <span className="text-2xl">🍺</span>
+          <span className="text-xs">{sidebarOpen ? "Close" : "Find a Bar"}</span>
         </button>
 
         {/* Zoom-out button */}
@@ -339,29 +340,31 @@ function AppContent() {
         )}
       </div>
 
-      {/* Weather overlay — middle-right of screen */}
+      {/* Weather overlay — center of screen */}
       {weatherDisplay && (
-        <div className="absolute top-1/2 -translate-y-1/2 right-4 z-10 pointer-events-none select-none">
-          <div className="flex flex-col items-end gap-0.5 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{weatherDisplay.icon}</span>
-              <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
-            </div>
-            <span className="text-white/30 text-xs">{weatherDisplay.label} · UV {weatherDisplay.uvIndex}</span>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none select-none">
+          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
+            <span className="text-lg">{weatherDisplay.icon}</span>
+            <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
+            <span className="text-white/30">{weatherDisplay.label}</span>
+            <span className="text-white/15">|</span>
+            <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
           </div>
         </div>
       )}
 
-      {/* Bottom center: Horizontal Time Slider */}
-      <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
-        <TimeSlider
-          timeState={timeState}
-          sunriseMinute={sunriseMinute}
-          sunsetMinute={sunsetMinute}
-          onMinuteChange={setMinuteOfDay}
-          onTogglePlay={togglePlay}
-        />
-      </div>
+      {/* Bottom center: Horizontal Time Slider — hidden when filters or sidebar open */}
+      {!filterPanelOpen && !sidebarOpen && (
+        <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
+          <TimeSlider
+            timeState={timeState}
+            sunriseMinute={sunriseMinute}
+            sunsetMinute={sunsetMinute}
+            onMinuteChange={setMinuteOfDay}
+            onTogglePlay={togglePlay}
+          />
+        </div>
+      )}
 
       {/* Sidebar */}
       <Sidebar

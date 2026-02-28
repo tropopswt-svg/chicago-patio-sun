@@ -272,8 +272,8 @@ export function QuickFilter({
           </div>
 
           {/* Sun preference */}
-          <div className="mb-4">
-            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
+          <div className="mb-3">
+            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
               Sunlight
             </label>
             <div className="flex gap-1.5">
@@ -291,19 +291,27 @@ export function QuickFilter({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-            <span className="text-xs text-white/35">
+          <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
+            <span className="text-[11px] text-white/35">
               <span className="text-white/65 font-medium">{filteredCount}</span>
               {filteredCount !== totalCount && ` of ${totalCount}`} patios
             </span>
-            {activeFilterCount > 0 && (
+            <div className="flex items-center gap-2">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="text-[11px] text-white/40 hover:text-white/65 transition-colors"
+                >
+                  Clear all
+                </button>
+              )}
               <button
-                onClick={clearAll}
-                className="text-xs text-white/40 hover:text-white/65 transition-colors"
+                onClick={onToggle}
+                className="px-3.5 py-1.5 rounded-full bg-white/15 text-[11px] font-semibold text-white/90 hover:bg-white/25 transition-all"
               >
-                Clear all
+                Done
               </button>
-            )}
+            </div>
           </div>
         </div>
       )}

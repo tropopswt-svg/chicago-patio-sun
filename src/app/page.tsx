@@ -37,6 +37,7 @@ function AppContent() {
   const [mapBearing, setMapBearing] = useState(0);
   const [submitFormOpen, setSubmitFormOpen] = useState(false);
   const [detailPatio, setDetailPatio] = useState<PatioWithSunStatus | null>(null);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [hoursFilter, setHoursFilter] = useState<HoursFilter>("all");
   const [quickFilter, setQuickFilter] = useState<QuickFilterState>({
     neighborhoods: [],
@@ -242,8 +243,8 @@ function AppContent() {
       {/* Sun direction indicator */}
       <SunIndicator date={timeState.date} mapBearing={mapBearing} />
 
-      {/* Top-left: Header + Quick Filter + Toggles */}
-      <div className="absolute top-4 left-4 z-10 w-64 sm:w-72">
+      {/* Top-left: Header + Quick Filter */}
+      <div className="absolute top-4 left-4 z-10 w-56 sm:w-72">
         <Header
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
@@ -257,55 +258,35 @@ function AppContent() {
             neighborhoodsWithPatios={neighborhoodsWithPatios}
             onNeighborhoodFlyTo={handleNeighborhoodFlyTo}
             currentTime={timeState.date}
+            isOpen={filterPanelOpen}
+            onToggle={() => setFilterPanelOpen((v) => !v)}
           />
         </div>
-        {/* Patio / Rooftop / Neither toggles */}
-        <div className="flex flex-col gap-1.5 mt-2">
-          <button
-            onClick={() =>
-              setQuickFilter((f) => ({
-                ...f,
-                setting: f.setting === "patio" ? "all" : "patio",
-              }))
-            }
-            className={`glass-panel px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              quickFilter.setting === "patio"
-                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
-                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
-            }`}
-          >
-            🕺 Patio
-          </button>
-          <button
-            onClick={() =>
-              setQuickFilter((f) => ({
-                ...f,
-                setting: f.setting === "rooftop" ? "all" : "rooftop",
-              }))
-            }
-            className={`glass-panel px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              quickFilter.setting === "rooftop"
-                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
-                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
-            }`}
-          >
-            🏙️ Rooftop
-          </button>
-          <button
-            onClick={() =>
-              setQuickFilter((f) => ({
-                ...f,
-                setting: "all",
-              }))
-            }
-            className={`glass-panel px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              quickFilter.setting === "all"
-                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
-                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
-            }`}
-          >
-            🤷 Neither
-          </button>
+        {/* Patio / Rooftop / Neither toggles — compact inline */}
+        <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
+          {([
+            { value: "patio" as const, label: "🕺", title: "Patio" },
+            { value: "rooftop" as const, label: "🏙️", title: "Rooftop" },
+            { value: "all" as const, label: "🤷", title: "All" },
+          ]).map((t) => (
+            <button
+              key={t.value}
+              onClick={() =>
+                setQuickFilter((f) => ({
+                  ...f,
+                  setting: t.value === "all" ? "all" : f.setting === t.value ? "all" : t.value,
+                }))
+              }
+              title={t.title}
+              className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all ${
+                quickFilter.setting === t.value
+                  ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
+                  : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -328,6 +309,16 @@ function AppContent() {
           </button>
         </div>
 
+        {/* Find a Bar — big sidebar toggle on right */}
+        <button
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="glass-panel flex items-center justify-center gap-2 px-5 py-3 rounded-full text-sm font-semibold text-white/85 hover:text-white hover:bg-white/[0.12] transition-all"
+          title="Browse all patios"
+        >
+          <span>🍺</span>
+          <span>{sidebarOpen ? "Close" : "Find a Bar"}</span>
+        </button>
+
         {/* Zoom-out button */}
         {selectedPatioId && (
           <button
@@ -341,21 +332,21 @@ function AppContent() {
         )}
       </div>
 
-      {/* Weather overlay — fixed top-center, liquid glass transparent text */}
+      {/* Weather overlay — middle-right of screen */}
       {weatherDisplay && (
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 z-10 pointer-events-none select-none">
-          <div className="flex items-center gap-2 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
-            <span className="text-lg">{weatherDisplay.icon}</span>
-            <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
-            <span className="text-white/30">{weatherDisplay.label}</span>
-            <span className="text-white/15">|</span>
-            <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
+        <div className="absolute top-1/2 -translate-y-1/2 right-4 z-10 pointer-events-none select-none">
+          <div className="flex flex-col items-end gap-0.5 text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{weatherDisplay.icon}</span>
+              <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
+            </div>
+            <span className="text-white/30 text-xs">{weatherDisplay.label} · UV {weatherDisplay.uvIndex}</span>
           </div>
         </div>
       )}
 
       {/* Bottom center: Horizontal Time Slider */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
+      <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
         <TimeSlider
           timeState={timeState}
           sunriseMinute={sunriseMinute}

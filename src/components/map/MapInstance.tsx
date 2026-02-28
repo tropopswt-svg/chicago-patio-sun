@@ -24,7 +24,6 @@ import {
   getSunPosition,
 } from "@/lib/suncalc-utils";
 import type { PatioWithSunStatus } from "@/lib/types";
-import { isOpenAt } from "@/lib/hours";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
@@ -154,31 +153,25 @@ export default function MapInstance({
     const map = mapRef.current;
     if (!map || !map.getSource("patios")) return;
 
-    const night = !isSunUp(date);
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: patiosWithStatus.map((p) => {
-        const openStatus = isOpenAt(p.openingHours, date);
-        return {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-          properties: {
-            id: p.id,
-            name: p.name,
-            address: p.address,
-            inSun: p.inSun,
-            sunTag: p.sunTag || "",
-            selected: p.id === selectedPatioId,
-            rooftop: p.rooftop || false,
-            isOpen: openStatus === true,
-            isNight: night,
-          },
-        };
-      }),
+      features: patiosWithStatus.map((p) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+        properties: {
+          id: p.id,
+          name: p.name,
+          address: p.address,
+          inSun: p.inSun,
+          sunTag: p.sunTag || "",
+          selected: p.id === selectedPatioId,
+          rooftop: p.rooftop || false,
+        },
+      })),
     };
 
     (map.getSource("patios") as mapboxgl.GeoJSONSource).setData(geojson);
-  }, [patiosWithStatus, selectedPatioId, date]);
+  }, [patiosWithStatus, selectedPatioId]);
 
   // Initialize map
   useEffect(() => {
@@ -340,7 +333,7 @@ export default function MapInstance({
         id: "patios-sun-glow",
         type: "circle",
         source: "patios",
-        filter: ["all", ["==", ["get", "inSun"], true], ["==", ["get", "isNight"], false]],
+        filter: ["==", ["get", "inSun"], true],
         paint: {
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
@@ -352,57 +345,21 @@ export default function MapInstance({
         },
       });
 
-      // Shaded patios (daytime)
+      // Base patio layer — ALWAYS renders every patio (no filter)
+      // Colors are switched between night/day via setPaintProperty in the date effect
       map.addLayer({
-        id: "patios-shaded",
+        id: "patios-base",
         type: "circle",
         source: "patios",
-        filter: ["all", ["==", ["get", "inSun"], false], ["==", ["get", "isNight"], false]],
-        paint: {
-          "circle-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            11.5, 3, 13, 4, 16, 7, 20, 12,
-          ],
-          "circle-color": SHADED_COLOR,
-          "circle-opacity": 0.85,
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#333",
-        },
-      });
-
-      // Sunlit patios (daytime)
-      map.addLayer({
-        id: "patios-sunlit",
-        type: "circle",
-        source: "patios",
-        filter: ["all", ["==", ["get", "inSun"], true], ["==", ["get", "isNight"], false]],
         paint: {
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
             11.5, 3.5, 13, 5, 16, 9, 20, 14,
           ],
-          "circle-color": SUNLIT_COLOR,
-          "circle-opacity": 1,
+          "circle-color": SHADED_COLOR,
+          "circle-opacity": 0.85,
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#FFD700",
-        },
-      });
-
-      // Nighttime: all patios show green (most lack hours data, assume open at night)
-      map.addLayer({
-        id: "patios-night-open",
-        type: "circle",
-        source: "patios",
-        filter: ["==", ["get", "isNight"], true],
-        paint: {
-          "circle-radius": [
-            "interpolate", ["linear"], ["zoom"],
-            11.5, 4, 13, 5.5, 16, 10, 20, 15,
-          ],
-          "circle-color": "#22c55e",
-          "circle-opacity": 0.9,
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#16a34a",
+          "circle-stroke-color": "#333",
         },
       });
 
@@ -424,31 +381,29 @@ export default function MapInstance({
       });
 
       // ── Click handlers ──
-      for (const layerId of ["patios-sunlit", "patios-shaded", "patios-night-open"]) {
-        map.on("click", layerId, (e) => {
-          hasZoomedIn.current = true;
-          map.off("click", handleZoomClick);
+      map.on("click", "patios-base", (e) => {
+        hasZoomedIn.current = true;
+        map.off("click", handleZoomClick);
 
-          const feature = e.features?.[0];
-          if (feature?.properties?.id) {
-            onPatioClick(feature.properties.id);
-            showPopup(map, e.lngLat, feature.properties);
-          }
-        });
-        map.on("dblclick", layerId, (e) => {
-          e.preventDefault();
-          const feature = e.features?.[0];
-          if (feature?.properties?.id) {
-            onOpenDetailRef.current(feature.properties.id);
-          }
-        });
-        map.on("mouseenter", layerId, () => {
-          map.getCanvas().style.cursor = "pointer";
-        });
-        map.on("mouseleave", layerId, () => {
-          map.getCanvas().style.cursor = "";
-        });
-      }
+        const feature = e.features?.[0];
+        if (feature?.properties?.id) {
+          onPatioClick(feature.properties.id);
+          showPopup(map, e.lngLat, feature.properties);
+        }
+      });
+      map.on("dblclick", "patios-base", (e) => {
+        e.preventDefault();
+        const feature = e.features?.[0];
+        if (feature?.properties?.id) {
+          onOpenDetailRef.current(feature.properties.id);
+        }
+      });
+      map.on("mouseenter", "patios-base", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "patios-base", () => {
+        map.getCanvas().style.cursor = "";
+      });
 
       // ── Auto pitch based on zoom ──
       // Zoom out → flatten to overhead; Zoom in → tilt to 3D
@@ -493,10 +448,41 @@ export default function MapInstance({
     updatePatioLayers();
   }, [updatePatioLayers]);
 
-  // Update sun lighting + ShadeMap when time changes
+  // Update sun lighting, dot colors, and ShadeMap when time changes
   useEffect(() => {
     const map = mapRef.current;
-    if (map) updateSunLighting(map, date);
+    if (!map) return;
+
+    updateSunLighting(map, date);
+
+    // Switch dot colors between night (solid green) and day (data-driven sun/shade)
+    if (map.getLayer("patios-base")) {
+      const night = !isSunUp(date);
+      if (night) {
+        map.setPaintProperty("patios-base", "circle-color", "#22c55e");
+        map.setPaintProperty("patios-base", "circle-stroke-color", "#16a34a");
+        map.setPaintProperty("patios-base", "circle-opacity", 0.9);
+      } else {
+        map.setPaintProperty("patios-base", "circle-color", [
+          "case", ["==", ["get", "inSun"], true], SUNLIT_COLOR, SHADED_COLOR,
+        ]);
+        map.setPaintProperty("patios-base", "circle-stroke-color", [
+          "case", ["==", ["get", "inSun"], true], "#FFD700", "#333",
+        ]);
+        map.setPaintProperty("patios-base", "circle-opacity", [
+          "case", ["==", ["get", "inSun"], true], 1.0, 0.85,
+        ]);
+      }
+    }
+
+    // Hide sun glow at night
+    if (map.getLayer("patios-sun-glow")) {
+      map.setLayoutProperty(
+        "patios-sun-glow",
+        "visibility",
+        isSunUp(date) ? "visible" : "none"
+      );
+    }
 
     const sm = shadeMapRef.current as { setDate?: (d: Date) => void } | null;
     if (sm?.setDate) sm.setDate(date);

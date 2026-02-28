@@ -59,6 +59,8 @@ interface QuickFilterProps {
   neighborhoodsWithPatios: Set<string>;
   onNeighborhoodFlyTo?: (name: string) => void;
   currentTime: Date;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 export function QuickFilter({
@@ -69,8 +71,9 @@ export function QuickFilter({
   neighborhoodsWithPatios,
   onNeighborhoodFlyTo,
   currentTime,
+  isOpen,
+  onToggle,
 }: QuickFilterProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
 
   const activeFilterCount =
@@ -132,16 +135,16 @@ export function QuickFilter({
     <>
       {/* Trigger button */}
       <button
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={onToggle}
         className={cn(
-          "glass-panel flex items-center gap-2 px-3.5 py-2.5 rounded-full text-sm font-medium transition-all",
+          "glass-panel flex items-center gap-2 px-4 py-3 rounded-full text-sm font-medium transition-all",
           isOpen
             ? "bg-white/[0.18] text-white border-white/25"
             : "text-white/65 hover:text-white hover:bg-white/[0.08]"
         )}
       >
         <SlidersHorizontal className="w-4 h-4" />
-        <span className="hidden sm:inline">Find a Patio</span>
+        <span>Filters</span>
         {activeFilterCount > 0 && (
           <span className="bg-white/25 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {activeFilterCount}
@@ -158,7 +161,7 @@ export function QuickFilter({
               What are you looking for?
             </h3>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={onToggle}
               className="w-7 h-7 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.08] transition-all"
             >
               <X className="w-4 h-4" />

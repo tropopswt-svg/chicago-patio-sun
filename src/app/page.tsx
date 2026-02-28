@@ -263,43 +263,41 @@ function AppContent() {
       </div>
 
       {/* Top-right buttons */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <button
-          onClick={() => setSubmitFormOpen(true)}
-          className="glass-panel w-10 h-10 rounded-xl flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          title="Submit a patio"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-        <button
-          onClick={handleRecenter}
-          className="glass-panel w-10 h-10 rounded-xl flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          title="Recenter to Old Town / River North"
-        >
-          <Crosshair className="w-5 h-5" />
-        </button>
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSubmitFormOpen(true)}
+            className="glass-icon-btn"
+            title="Submit a patio"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleRecenter}
+            className="glass-icon-btn"
+            title="Recenter to Old Town / River North"
+          >
+            <Crosshair className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Zoom-out button — appears after clicking into a patio */}
+        {selectedPatioId && (
+          <button
+            onClick={handleZoomOut}
+            className="glass-panel flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
+            title="Zoom back out"
+          >
+            <ZoomOut className="w-4 h-4" />
+            <span>Zoom out</span>
+          </button>
+        )}
       </div>
 
-      {/* Zoom-out button — appears after clicking into a patio */}
-      {selectedPatioId && (
-        <button
-          onClick={handleZoomOut}
-          className="absolute top-16 right-4 z-10 glass-panel flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-          title="Zoom back out"
-        >
-          <ZoomOut className="w-4 h-4" />
-          <span className="hidden sm:inline">Zoom out</span>
-        </button>
-      )}
-
-      {/* Bottom-left: Legend */}
-      <div className="absolute bottom-24 left-4 z-10">
+      {/* Bottom-left stack: Legend + Toggle above time slider */}
+      <div className="absolute bottom-[170px] left-4 z-10 flex flex-col gap-2 items-start">
         <Legend sunCount={filteredSunCount} shadeCount={filteredShadeCount} weather={legendWeather} />
-      </div>
-
-      {/* Patio / Rooftop toggle */}
-      <div className="absolute bottom-[108px] left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 z-10">
-        <div className="glass-panel rounded-full flex p-1 gap-1">
+        <div className="glass-panel rounded-full flex p-1 gap-0.5">
           <button
             onClick={() =>
               setQuickFilter((f) => ({
@@ -307,10 +305,10 @@ function AppContent() {
                 setting: f.setting === "patio" ? "all" : "patio",
               }))
             }
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
               quickFilter.setting === "patio"
-                ? "bg-amber-500/30 text-amber-300"
-                : "text-white/50 hover:text-white/80"
+                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
+                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
             }`}
           >
             🕺 Patio
@@ -322,10 +320,10 @@ function AppContent() {
                 setting: f.setting === "rooftop" ? "all" : "rooftop",
               }))
             }
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
               quickFilter.setting === "rooftop"
-                ? "bg-amber-500/30 text-amber-300"
-                : "text-white/50 hover:text-white/80"
+                ? "bg-white/[0.18] text-white border-0.5 border-white/20 shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
+                : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
             }`}
           >
             🏙️ Rooftop

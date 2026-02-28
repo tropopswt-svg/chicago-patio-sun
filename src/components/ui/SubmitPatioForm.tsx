@@ -66,28 +66,28 @@ export function SubmitPatioForm({ isOpen, onClose, onSuccess }: SubmitPatioFormP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={onClose} />
 
       {/* Modal */}
-      <div className="glass-panel relative w-full max-w-md rounded-2xl p-6">
+      <div className="glass-panel relative w-full max-w-md rounded-[24px] p-6">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-white/65 hover:bg-white/[0.08] transition-all"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-lg font-semibold text-white mb-4">Submit a Patio</h2>
+        <h2 className="text-lg font-semibold text-white/90 mb-4 tracking-tight">Submit a Patio</h2>
 
         {status === "success" ? (
           <div className="text-center py-8">
             <div className="text-2xl mb-2">&#10003;</div>
-            <p className="text-green-400 font-medium">Patio submitted!</p>
+            <p className="text-green-300/80 font-medium">Patio submitted!</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs text-white/50 mb-1">Venue Name</label>
+              <label className="block text-xs text-white/40 mb-1.5">Venue Name</label>
               <input
                 type="text"
                 value={name}
@@ -95,28 +95,28 @@ export function SubmitPatioForm({ isOpen, onClose, onSuccess }: SubmitPatioFormP
                 required
                 minLength={2}
                 placeholder="e.g. Kincade's Bar & Grill"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                className="glass-input text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-white/50 mb-1">Address</label>
+              <label className="block text-xs text-white/40 mb-1.5">Address</label>
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 required
                 placeholder="e.g. 950 W Armitage Ave"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                className="glass-input text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-white/50 mb-1">Type</label>
+              <label className="block text-xs text-white/40 mb-1.5">Type</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/50 [&>option]:bg-gray-900"
+                className="glass-input text-sm [&>option]:bg-gray-900"
               >
                 {VENUE_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -127,17 +127,17 @@ export function SubmitPatioForm({ isOpen, onClose, onSuccess }: SubmitPatioFormP
             </div>
 
             {status === "error" && (
-              <p className="text-red-400 text-sm">{errorMsg}</p>
+              <p className="text-red-300/80 text-sm">{errorMsg}</p>
             )}
 
             <button
               type="submit"
               disabled={status === "submitting"}
               className={cn(
-                "w-full py-2.5 rounded-xl text-sm font-medium transition-colors",
+                "w-full py-2.5 rounded-full text-sm font-medium transition-all border",
                 status === "submitting"
-                  ? "bg-amber-500/20 text-amber-300/50 cursor-wait"
-                  : "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                  ? "bg-white/[0.06] border-white/[0.06] text-white/30 cursor-wait"
+                  : "bg-white/[0.12] border-white/[0.15] text-white/85 hover:bg-white/[0.18] hover:border-white/[0.22]"
               )}
             >
               {status === "submitting" ? "Submitting..." : "Submit Patio"}

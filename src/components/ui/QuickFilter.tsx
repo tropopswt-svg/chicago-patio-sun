@@ -122,22 +122,28 @@ export function QuickFilter({
     ? [...topDisplay, ...extraNeighborhoods]
     : topDisplay;
 
+  const pill = (active: boolean, variant: "amber" | "green" | "indigo" = "amber") =>
+    cn(
+      "glass-pill",
+      active && (variant === "green" ? "glass-pill-green" : variant === "indigo" ? "glass-pill-indigo" : "glass-pill-amber")
+    );
+
   return (
     <>
       {/* Trigger button */}
       <button
         onClick={() => setIsOpen((v) => !v)}
         className={cn(
-          "glass-panel flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all",
+          "glass-panel flex items-center gap-2 px-3.5 py-2.5 rounded-full text-sm font-medium transition-all",
           isOpen
-            ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-            : "text-white/70 hover:text-white hover:bg-white/10"
+            ? "bg-white/[0.18] text-white border-white/25"
+            : "text-white/65 hover:text-white hover:bg-white/[0.08]"
         )}
       >
         <SlidersHorizontal className="w-4 h-4" />
         <span className="hidden sm:inline">Find a Patio</span>
         {activeFilterCount > 0 && (
-          <span className="bg-amber-500 text-black text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+          <span className="bg-white/25 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {activeFilterCount}
           </span>
         )}
@@ -145,15 +151,15 @@ export function QuickFilter({
 
       {/* Filter panel */}
       {isOpen && (
-        <div className="glass-panel rounded-2xl p-4 w-[calc(100vw-2rem)] sm:w-96 mt-2 quick-filter-enter">
+        <div className="glass-panel rounded-[20px] p-4 w-[calc(100vw-2rem)] sm:w-96 mt-2 quick-filter-enter">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold text-sm">
+            <h3 className="text-white/90 font-semibold text-sm tracking-tight">
               What are you looking for?
             </h3>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white/30 hover:text-white/60 transition-colors"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.08] transition-all"
             >
               <X className="w-4 h-4" />
             </button>
@@ -161,7 +167,7 @@ export function QuickFilter({
 
           {/* Neighborhood section */}
           <div className="mb-4">
-            <label className="text-white/40 text-xs font-medium uppercase tracking-wider mb-2 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
               Neighborhood
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -169,12 +175,7 @@ export function QuickFilter({
                 <button
                   key={name}
                   onClick={() => toggleNeighborhood(name)}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    filters.neighborhoods.includes(name)
-                      ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-                      : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                  )}
+                  className={pill(filters.neighborhoods.includes(name))}
                 >
                   {titleCase(name)}
                 </button>
@@ -183,7 +184,7 @@ export function QuickFilter({
             {extraNeighborhoods.length > 0 && (
               <button
                 onClick={() => setShowAllNeighborhoods((v) => !v)}
-                className="flex items-center gap-1 text-xs text-white/30 hover:text-white/50 mt-2 transition-colors"
+                className="flex items-center gap-1 text-xs text-white/25 hover:text-white/45 mt-2 transition-colors"
               >
                 {showAllNeighborhoods ? (
                   <>
@@ -201,7 +202,7 @@ export function QuickFilter({
 
           {/* Food section */}
           <div className="mb-4">
-            <label className="text-white/40 text-xs font-medium uppercase tracking-wider mb-2 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
               Food
             </label>
             <div className="flex gap-1.5">
@@ -209,12 +210,7 @@ export function QuickFilter({
                 <button
                   key={opt.value}
                   onClick={() => setFood(opt.value)}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                    filters.food === opt.value
-                      ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-                      : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                  )}
+                  className={pill(filters.food === opt.value)}
                 >
                   <span>{opt.icon}</span>
                   {opt.label}
@@ -225,7 +221,7 @@ export function QuickFilter({
 
           {/* Setting section */}
           <div className="mb-4">
-            <label className="text-white/40 text-xs font-medium uppercase tracking-wider mb-2 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
               Setting
             </label>
             <div className="flex gap-1.5">
@@ -233,12 +229,7 @@ export function QuickFilter({
                 <button
                   key={opt.value}
                   onClick={() => setSetting(opt.value)}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                    filters.setting === opt.value
-                      ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-                      : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                  )}
+                  className={pill(filters.setting === opt.value)}
                 >
                   <span>{opt.icon}</span>
                   {opt.label}
@@ -249,42 +240,27 @@ export function QuickFilter({
 
           {/* Hours section */}
           <div className="mb-4">
-            <label className="text-white/40 text-xs font-medium uppercase tracking-wider mb-2 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
               Hours
             </label>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => onFiltersChange({ ...filters, openOnly: true })}
-                className={cn(
-                  "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                  filters.openOnly
-                    ? "bg-green-500/20 text-green-300 ring-1 ring-green-500/30"
-                    : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                )}
+                className={pill(filters.openOnly, "green")}
               >
                 <span>🟢</span>
                 Open at {formatTime(currentTime)}
               </button>
               <button
                 onClick={() => onFiltersChange({ ...filters, openOnly: false })}
-                className={cn(
-                  "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                  !filters.openOnly
-                    ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-                    : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                )}
+                className={pill(!filters.openOnly)}
               >
                 <span>🕐</span>
                 Any
               </button>
               <button
                 onClick={() => onFiltersChange({ ...filters, lateNight: !filters.lateNight })}
-                className={cn(
-                  "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                  filters.lateNight
-                    ? "bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/30"
-                    : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                )}
+                className={pill(filters.lateNight, "indigo")}
               >
                 <span>🌙</span>
                 Open Late (4am+)
@@ -294,7 +270,7 @@ export function QuickFilter({
 
           {/* Sun preference */}
           <div className="mb-4">
-            <label className="text-white/40 text-xs font-medium uppercase tracking-wider mb-2 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-2 block">
               Sunlight
             </label>
             <div className="flex gap-1.5">
@@ -302,12 +278,7 @@ export function QuickFilter({
                 <button
                   key={opt.value}
                   onClick={() => setSunPreference(opt.value)}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                    filters.sunPreference === opt.value
-                      ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-                      : "bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10"
-                  )}
+                  className={pill(filters.sunPreference === opt.value)}
                 >
                   <span>{opt.icon}</span>
                   {opt.label}
@@ -317,15 +288,15 @@ export function QuickFilter({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-3 border-t border-white/5">
-            <span className="text-xs text-white/40">
-              <span className="text-white/70 font-medium">{filteredCount}</span>
+          <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+            <span className="text-xs text-white/35">
+              <span className="text-white/65 font-medium">{filteredCount}</span>
               {filteredCount !== totalCount && ` of ${totalCount}`} patios
             </span>
             {activeFilterCount > 0 && (
               <button
                 onClick={clearAll}
-                className="text-xs text-amber-400/60 hover:text-amber-400 transition-colors"
+                className="text-xs text-white/40 hover:text-white/65 transition-colors"
               >
                 Clear all
               </button>

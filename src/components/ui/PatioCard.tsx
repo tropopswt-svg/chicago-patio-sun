@@ -47,10 +47,10 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay }: PatioCard
       ref={ref}
       onClick={onClick}
       className={cn(
-        "w-full text-left p-3 rounded-xl transition-all",
-        "hover:bg-white/5 active:scale-[0.98]",
+        "w-full text-left p-3 rounded-2xl transition-all",
+        "hover:bg-white/[0.05] active:scale-[0.98]",
         isSelected
-          ? "bg-white/10 ring-1 ring-amber-500/50"
+          ? "bg-white/[0.08] ring-1 ring-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
           : "bg-transparent"
       )}
     >
@@ -61,17 +61,17 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay }: PatioCard
             src={photoUrl}
             alt=""
             onError={() => setImgError(true)}
-            className="mt-0.5 w-12 h-12 rounded-lg object-cover shrink-0"
+            className="mt-0.5 w-12 h-12 rounded-xl object-cover shrink-0"
           />
         ) : isLoading ? (
-          <div className="mt-0.5 w-12 h-12 rounded-lg shrink-0 bg-white/5 animate-pulse" />
+          <div className="mt-0.5 w-12 h-12 rounded-xl shrink-0 bg-white/[0.04] animate-pulse" />
         ) : (
           <div
             className={cn(
               "mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0",
               patio.inSun
-                ? "bg-amber-500/20 text-amber-400"
-                : "bg-gray-500/20 text-gray-400"
+                ? "bg-amber-500/15 text-amber-400"
+                : "bg-white/[0.06] text-white/40"
             )}
           >
             {patio.inSun ? (
@@ -83,57 +83,43 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay }: PatioCard
         )}
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium text-white truncate">
+          <h3 className="text-sm font-medium text-white/90 truncate tracking-tight">
             {patio.name}
           </h3>
           {patio.address && (
-            <p className="text-xs text-white/40 truncate flex items-center gap-1 mt-0.5">
+            <p className="text-xs text-white/35 truncate flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3 shrink-0" />
               {patio.address}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-            <span
-              className={cn(
-                "inline-block text-xs px-2 py-0.5 rounded-full",
-                patio.inSun
-                  ? "bg-amber-500/20 text-amber-300"
-                  : "bg-gray-500/20 text-gray-400"
-              )}
-            >
-              {patio.inSun ? "\u2600\uFE0F In Sun" : "\uD83C\uDF25\uFE0F In Shade"}
+            <span className={cn("glass-badge", patio.inSun ? "glass-badge-sun" : "glass-badge-shade")}>
+              {patio.inSun ? "☀️ In Sun" : "🌥️ In Shade"}
             </span>
             {patio.rooftop && (
-              <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300">
+              <span className="glass-badge glass-badge-rooftop">
                 Rooftop
               </span>
             )}
             {patio.lateNight && (
-              <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+              <span className="glass-badge glass-badge-late">
                 🌙 Late
               </span>
             )}
             {hours !== null && (
-              <span
-                className={cn(
-                  "inline-block text-xs px-2 py-0.5 rounded-full",
-                  isOpen
-                    ? "bg-green-500/20 text-green-300"
-                    : "bg-gray-500/20 text-gray-400"
-                )}
-              >
-                {isOpen ? `Open \u00B7 ${hours}` : `Closed \u00B7 ${hours}`}
+              <span className={cn("glass-badge", isOpen ? "glass-badge-open" : "glass-badge-closed")}>
+                {isOpen ? `Open · ${hours}` : `Closed · ${hours}`}
               </span>
             )}
             {busyness && (
               <span
                 className={cn(
-                  "inline-block text-xs px-2 py-0.5 rounded-full",
+                  "glass-badge",
                   busyness.label === "Busy"
-                    ? "bg-red-500/20 text-red-300"
+                    ? "glass-badge-busy"
                     : busyness.label === "Moderate"
-                    ? "bg-yellow-500/20 text-yellow-300"
-                    : "bg-green-500/20 text-green-300"
+                    ? "glass-badge-moderate"
+                    : "glass-badge-quiet"
                 )}
               >
                 {busyness.label}
@@ -141,7 +127,7 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay }: PatioCard
             )}
           </div>
           {patio.sunTag && (
-            <span className="block mt-1 text-[11px] text-white/50">
+            <span className="block mt-1 text-[11px] text-white/40">
               {patio.sunTag}
             </span>
           )}

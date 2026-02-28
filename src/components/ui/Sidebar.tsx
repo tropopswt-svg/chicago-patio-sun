@@ -79,15 +79,15 @@ export function Sidebar({
         isOpen ? "translate-x-0" : "translate-x-full"
       )}
     >
-      <div className="glass-panel h-full rounded-l-2xl flex flex-col overflow-hidden">
+      <div className="glass-panel-heavy h-full rounded-l-[20px] flex flex-col overflow-hidden">
         {/* Stats bar */}
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-amber-400 font-medium">
+            <span className="text-amber-400/90 font-medium">
               ☀️ {sunCount} in sun
             </span>
-            <span className="text-white/30">|</span>
-            <span className="text-gray-400">
+            <span className="text-white/15">|</span>
+            <span className="text-white/50">
               🌥️ {shadeCount} in shade
             </span>
           </div>
@@ -96,13 +96,13 @@ export function Sidebar({
         {/* Search */}
         <div className="px-4 pb-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
             <input
               type="text"
               placeholder="Search patios..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+              className="glass-input pl-9 pr-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -114,10 +114,8 @@ export function Sidebar({
               key={f.value}
               onClick={() => setFilter(f.value)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                filter === f.value
-                  ? "bg-amber-500/20 text-amber-300"
-                  : "text-white/40 hover:text-white/60 hover:bg-white/5"
+                "glass-pill",
+                filter === f.value && "glass-pill-amber"
               )}
             >
               {f.icon}
@@ -133,10 +131,8 @@ export function Sidebar({
               key={f.value}
               onClick={() => onHoursFilterChange(f.value)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                hoursFilter === f.value
-                  ? "bg-green-500/20 text-green-300"
-                  : "text-white/40 hover:text-white/60 hover:bg-white/5"
+                "glass-pill",
+                hoursFilter === f.value && "glass-pill-green"
               )}
             >
               {f.icon}
@@ -149,10 +145,10 @@ export function Sidebar({
         <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-white/15 border-t-white/50 rounded-full animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-white/30 text-sm">
+            <div className="text-center py-12 text-white/25 text-sm">
               No patios found
             </div>
           ) : (

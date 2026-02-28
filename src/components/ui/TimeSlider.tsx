@@ -27,25 +27,25 @@ export function TimeSlider({
   const currentPct = (minuteOfDay / 1440) * 100;
 
   return (
-    <div className="glass-panel rounded-2xl p-4 space-y-3">
+    <div className="glass-panel rounded-[20px] p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isNight ? (
-            <Moon className="w-4 h-4 text-blue-300" />
+            <Moon className="w-4 h-4 text-blue-300/80" />
           ) : (
             <Sun className="w-4 h-4 text-amber-400" />
           )}
-          <span className="text-sm font-medium text-white/90">
+          <span className="text-sm font-medium text-white/85 tracking-tight">
             {formatMinuteOfDay(minuteOfDay)}
           </span>
         </div>
         <button
           onClick={onTogglePlay}
           className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+            "w-9 h-9 rounded-full flex items-center justify-center transition-all",
             isPlaying
-              ? "bg-amber-500 text-black"
-              : "bg-white/10 text-white hover:bg-white/20"
+              ? "bg-white/[0.22] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.1)]"
+              : "bg-white/[0.08] text-white/70 hover:bg-white/[0.14] hover:text-white"
           )}
         >
           {isPlaying ? (
@@ -63,19 +63,19 @@ export function TimeSlider({
             className="absolute inset-0"
             style={{
               background: `linear-gradient(to right,
-                #1a1a3e 0%,
-                #1a1a3e ${sunrisePct}%,
+                rgba(26, 26, 62, 0.8) 0%,
+                rgba(26, 26, 62, 0.8) ${sunrisePct}%,
                 #f59e0b ${sunrisePct + 5}%,
                 #fbbf24 ${(sunrisePct + sunsetPct) / 2}%,
                 #f59e0b ${sunsetPct - 5}%,
-                #1a1a3e ${sunsetPct}%,
-                #1a1a3e 100%
+                rgba(26, 26, 62, 0.8) ${sunsetPct}%,
+                rgba(26, 26, 62, 0.8) 100%
               )`,
             }}
           />
-          {/* Progress indicator */}
+          {/* Progress overlay */}
           <div
-            className="absolute top-0 left-0 h-full bg-white/20 rounded-full"
+            className="absolute top-0 left-0 h-full bg-white/15 rounded-full"
             style={{ width: `${currentPct}%` }}
           />
         </div>
@@ -90,14 +90,18 @@ export function TimeSlider({
           className="absolute inset-0 w-full h-2 opacity-0 cursor-pointer"
         />
 
-        {/* Thumb indicator */}
+        {/* Thumb — liquid glass orb */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-lg shadow-amber-500/30 border-2 border-amber-400 pointer-events-none transition-[left] duration-75"
-          style={{ left: `calc(${currentPct}% - 8px)` }}
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full pointer-events-none transition-[left] duration-75"
+          style={{
+            left: `calc(${currentPct}% - 8px)`,
+            background: "linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.5)",
+          }}
         />
       </div>
 
-      <div className="flex justify-between text-xs text-white/40">
+      <div className="flex justify-between text-xs text-white/35">
         <span>12 AM</span>
         <span>{formatMinuteOfDay(sunriseMinute)} rise</span>
         <span>{formatMinuteOfDay(sunsetMinute)} set</span>
@@ -105,8 +109,8 @@ export function TimeSlider({
       </div>
 
       {isNight && (
-        <div className="text-center text-xs text-blue-300/70 bg-blue-500/10 rounded-lg py-1.5">
-          Sun is below the horizon — no sunlight
+        <div className="text-center text-xs text-blue-300/60 bg-blue-500/[0.08] border border-blue-400/[0.08] rounded-full py-1.5">
+          Sun is below the horizon
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
-import { X, MapPin, Building2 } from "lucide-react";
+import { X, MapPin, Building2, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePatioPhoto } from "@/hooks/usePatioPhoto";
 import { usePatioBusyness, getBusynessLevel } from "@/hooks/usePatioBusyness";
@@ -16,7 +16,9 @@ interface PatioDetailPanelProps {
   minuteOfDay: number;
   date: Date;
   buildingIndex: BuildingIndex | null;
+  isPlaying?: boolean;
   onTimeChange: (minute: number) => void;
+  onTogglePlay?: () => void;
   onClose: () => void;
 }
 
@@ -39,7 +41,9 @@ export function PatioDetailPanel({
   minuteOfDay,
   date,
   buildingIndex,
+  isPlaying,
   onTimeChange,
+  onTogglePlay,
   onClose,
 }: PatioDetailPanelProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -287,11 +291,25 @@ export function PatioDetailPanel({
 
           {/* Interactive time slider */}
           <div className="space-y-1.5">
-            {/* Time + sun status display */}
+            {/* Time + play button + sun status display */}
             <div className="flex items-center justify-between">
-              <span className="text-xl font-semibold text-white/90 tabular-nums">
-                {formatTime(localMinute)}
-              </span>
+              <div className="flex items-center gap-2">
+                {onTogglePlay && (
+                  <button
+                    onClick={onTogglePlay}
+                    className={cn("glass-play-btn shrink-0", isPlaying && "playing")}
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-5 h-5" />
+                    ) : (
+                      <Play className="w-5 h-5 ml-0.5" />
+                    )}
+                  </button>
+                )}
+                <span className="text-xl font-semibold text-white/90 tabular-nums">
+                  {formatTime(localMinute)}
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 {sunStatus && (
                   <span className={cn(

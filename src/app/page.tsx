@@ -473,7 +473,9 @@ function AppContent() {
         minuteOfDay={timeState.minuteOfDay}
         date={timeState.date}
         buildingIndex={buildingIndex}
+        isPlaying={timeState.isPlaying}
         onTimeChange={setMinuteOfDay}
+        onTogglePlay={togglePlay}
         onClose={() => setDetailPatio(null)}
       />
 

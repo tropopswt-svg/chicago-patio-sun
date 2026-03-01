@@ -58,8 +58,8 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
             type: "directional",
             properties: {
               direction: [azimuthDegrees, sunUp ? Math.max(5, altitudeDegrees) : 80],
-              color: sunUp ? sunColor : "#222244",
-              intensity: sunUp ? intensity : 0.05,
+              color: sunUp ? sunColor : "#4455aa",
+              intensity: sunUp ? intensity : 0.3,
               "cast-shadows": true,
               "shadow-intensity": sunUp ? 1.0 : 0,
             },
@@ -68,8 +68,8 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
             id: "ambient",
             type: "ambient",
             properties: {
-              color: sunUp ? "#8090b0" : "#252550",
-              intensity: sunUp ? 0.1 : 0.25,
+              color: sunUp ? "#8090b0" : "#4466aa",
+              intensity: sunUp ? 0.1 : 0.5,
             },
           },
         ]);
@@ -78,16 +78,16 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
         useLightsAPI = false;
         map.setLight({
           anchor: "map",
-          color: sunUp ? sunColor : "#222244",
-          intensity: sunUp ? intensity : 0.15,
+          color: sunUp ? sunColor : "#4455aa",
+          intensity: sunUp ? intensity : 0.35,
           position: [1.5, azimuthDegrees, sunUp ? Math.max(10, 90 - altitudeDegrees) : 80],
         });
       }
     } else {
       map.setLight({
         anchor: "map",
-        color: sunUp ? sunColor : "#111133",
-        intensity: sunUp ? intensity : 0.1,
+        color: sunUp ? sunColor : "#4455aa",
+        intensity: sunUp ? intensity : 0.3,
         position: [1.5, azimuthDegrees, sunUp ? Math.max(10, 90 - altitudeDegrees) : 80],
       });
     }
@@ -122,11 +122,11 @@ function updateSunLighting(map: mapboxgl.Map, date: Date) {
       });
     } else {
       map.setFog({
-        color: "rgb(18, 18, 38)",
-        "high-color": "rgb(25, 25, 50)",
-        "horizon-blend": 0.1,
-        "space-color": "rgb(12, 12, 28)",
-        "star-intensity": 0.35,
+        color: "rgb(30, 35, 65)",
+        "high-color": "rgb(40, 45, 80)",
+        "horizon-blend": 0.08,
+        "space-color": "rgb(18, 20, 45)",
+        "star-intensity": 0.4,
       });
     }
   } catch (err) {
@@ -602,13 +602,14 @@ export default function MapInstance({
     // Switch dot colors between night (solid green) and day (data-driven sun/shade)
     if (map.getLayer("patios-base")) {
       if (night) {
-        map.setPaintProperty("patios-base", "circle-color", "#22c55e");
-        map.setPaintProperty("patios-base", "circle-stroke-color", "#16a34a");
+        map.setPaintProperty("patios-base", "circle-color", "#4ade80");
+        map.setPaintProperty("patios-base", "circle-stroke-color", "#22c55e");
+        map.setPaintProperty("patios-base", "circle-stroke-width", 2.5);
         map.setPaintProperty("patios-base", "circle-opacity", 1.0);
         // Boost dot size at night for visibility
         map.setPaintProperty("patios-base", "circle-radius", [
           "interpolate", ["linear"], ["zoom"],
-          11.5, 4.5, 13, 6, 16, 10, 20, 15,
+          11.5, 5, 13, 7, 16, 11, 20, 16,
         ]);
       } else {
         map.setPaintProperty("patios-base", "circle-color", [

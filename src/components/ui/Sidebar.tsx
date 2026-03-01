@@ -200,7 +200,7 @@ export function Sidebar({
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 mb-2">
                   <button
                     onClick={() => setHoursStatus((h) => (h === "open" ? "all" : "open"))}
                     className={cn("glass-pill", hoursStatus === "open" && "glass-pill-green")}
@@ -213,21 +213,23 @@ export function Sidebar({
                   >
                     <span className="text-xs">🔴</span> Closed
                   </button>
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <button
                     onClick={() => setSunFilter((f) => (f === "sun" ? "all" : "sun"))}
-                    className={cn("glass-pill", sunFilter === "sun" && "glass-pill-amber")}
+                    className={cn("glass-pill w-full justify-center", sunFilter === "sun" && "glass-pill-amber")}
                   >
                     <Sun className="w-3.5 h-3.5" /> Sun
                   </button>
                   <button
                     onClick={() => setSunFilter((f) => (f === "shade" ? "all" : "shade"))}
-                    className={cn("glass-pill", sunFilter === "shade" && "glass-pill-amber")}
+                    className={cn("glass-pill w-full justify-center", sunFilter === "shade" && "glass-pill-amber")}
                   >
                     <Cloud className="w-3.5 h-3.5" /> Shade
                   </button>
                   <button
                     onClick={() => setSunFilter((f) => (f === "rooftop" ? "all" : "rooftop"))}
-                    className={cn("glass-pill", sunFilter === "rooftop" && "glass-pill-amber")}
+                    className={cn("glass-pill w-full justify-center", sunFilter === "rooftop" && "glass-pill-amber")}
                   >
                     <Building2 className="w-3.5 h-3.5" /> Rooftop
                   </button>

@@ -74,10 +74,17 @@ export function useTimeControl() {
   }, [isAutoplay]);
 
   // Play button → always manual (minute-by-minute) after first interaction
+  // If starting, jump to sunrise first
   const togglePlay = useCallback(() => {
     setIsAutoplay(false);
-    setIsPlaying((prev) => !prev);
-  }, []);
+    setIsPlaying((prev) => {
+      if (!prev) {
+        // Starting playback — jump to sunrise
+        setDate((d) => dateFromMinute(d, sunriseMinute));
+      }
+      return !prev;
+    });
+  }, [sunriseMinute]);
 
   const stepForward = useCallback(() => {
     setDate((prev) => {

@@ -392,8 +392,8 @@ function AppContent() {
         </div>
       )}
 
-      {/* Mid-right: Search Bars button — hidden when sidebar is open */}
-      {!sidebarOpen && (
+      {/* Mid-right: Search Bars button — hidden during map interaction or popups */}
+      {!hideChrome && (
         <button
           onClick={() => {
             setSidebarOpen(true);
@@ -434,7 +434,12 @@ function AppContent() {
 
       {/* Bottom center: Horizontal Time Slider — hidden when filters or sidebar open */}
       {!filterPanelOpen && !sidebarOpen && (
-        <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[80vw] sm:w-[400px] z-10">
+        <div
+          className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[80vw] sm:w-[400px] z-10"
+          onPointerDown={() => setSliderInteracting(true)}
+          onPointerUp={() => setSliderInteracting(false)}
+          onPointerCancel={() => setSliderInteracting(false)}
+        >
           <TimeSlider
             timeState={timeState}
             sunriseMinute={sunriseMinute}

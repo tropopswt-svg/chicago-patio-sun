@@ -7,7 +7,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { usePatioPhoto } from "@/hooks/usePatioPhoto";
 import { usePatioBusyness, getBusynessLevel } from "@/hooks/usePatioBusyness";
 import { isPatioInShadow } from "@/lib/shadow-calc";
-import { getSunPosition, isSunUp, getSunriseMinute, getSunsetMinute } from "@/lib/suncalc-utils";
+import { getSunPosition, isSunUp, getSunriseMinute, getSunsetMinute, getSunTag } from "@/lib/suncalc-utils";
 import { isOpenAt } from "@/lib/hours";
 import type { PatioWithSunStatus } from "@/lib/types";
 import type { BuildingIndex } from "@/lib/building-index";
@@ -110,13 +110,13 @@ export function PatioDetailPanel({
   const sunStatus = useMemo(() => {
     if (!patio || !buildingIndex) return null;
     const d = dateFromMinute(date, localMinute);
-    if (!isSunUp(d)) return { inSun: false, label: "🌙 Night" };
+    if (!isSunUp(d)) return { inSun: false, label: getSunTag(false, false, 0, d) };
     const { azimuthDegrees, altitudeDegrees } = getSunPosition(d);
-    if (altitudeDegrees > 70) return { inSun: true, label: "☀️ Direct Sun" };
+    if (altitudeDegrees > 70) return { inSun: true, label: getSunTag(true, false, altitudeDegrees, d) };
     const { inShadow } = isPatioInShadow(buildingIndex, patio.lng, patio.lat, azimuthDegrees, altitudeDegrees);
-    return inShadow
-      ? { inSun: false, label: "🏢 In Shade" }
-      : { inSun: true, label: "☀️ In Sun" };
+    const blockedByBuilding = inShadow;
+    const inSun = !inShadow;
+    return { inSun, label: getSunTag(inSun, blockedByBuilding, altitudeDegrees, d) };
   }, [patio, buildingIndex, date, localMinute]);
 
   // Busyness at the local slider time

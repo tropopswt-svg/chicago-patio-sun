@@ -186,9 +186,7 @@ export function Sidebar({
               <div
                 className="absolute top-full right-0 mt-1 z-30 p-3 rounded-2xl w-48 quick-filter-enter"
                 style={{
-                  background: "linear-gradient(160deg, rgba(15, 15, 35, 0.85) 0%, rgba(255, 255, 255, 0.06) 100%)",
-                  backdropFilter: "blur(40px) saturate(200%)",
-                  WebkitBackdropFilter: "blur(40px) saturate(200%)",
+                  background: "linear-gradient(160deg, rgba(20, 20, 45, 0.95) 0%, rgba(15, 15, 35, 0.98) 100%)",
                   border: "0.5px solid rgba(255, 255, 255, 0.15)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
                 }}
@@ -265,9 +263,7 @@ export function Sidebar({
             {showDayPicker && (
               <div className="absolute top-full left-0 mt-1 z-30 flex gap-1 p-1.5 rounded-2xl quick-filter-enter"
                 style={{
-                  background: "linear-gradient(160deg, rgba(15, 15, 35, 0.7) 0%, rgba(255, 255, 255, 0.06) 100%)",
-                  backdropFilter: "blur(40px) saturate(200%)",
-                  WebkitBackdropFilter: "blur(40px) saturate(200%)",
+                  background: "linear-gradient(160deg, rgba(20, 20, 45, 0.95) 0%, rgba(15, 15, 35, 0.98) 100%)",
                   border: "0.5px solid rgba(255, 255, 255, 0.15)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
                 }}

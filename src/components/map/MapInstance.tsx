@@ -194,7 +194,8 @@ export default function MapInstance({
       zoom: INITIAL_ZOOM,
       pitch: INITIAL_PITCH,
       bearing: INITIAL_BEARING,
-      antialias: true,
+      antialias: typeof window !== 'undefined' && window.innerWidth >= 640,
+      fadeDuration: 0,
       maxBounds: CHICAGO_MAX_BOUNDS,
       minZoom: 11.5,
       maxZoom: 20,
@@ -421,6 +422,9 @@ export default function MapInstance({
       map.on("zoomend", () => {
         const zoom = map.getZoom();
         const pitch = map.getPitch();
+
+        // Mark as zoomed in once user reaches 14.5+ (via pinch, scroll, or clicks)
+        if (zoom >= 14.5) hasZoomedIn.current = true;
 
         if (zoom < 13.5 && pitch > 5) {
           map.easeTo({ pitch: 0, bearing: 0, duration: 600 });

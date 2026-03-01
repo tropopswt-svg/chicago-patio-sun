@@ -39,6 +39,8 @@ function AppContent() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [noSunDismissed, setNoSunDismissed] = useState(false);
+  const [mapInteracting, setMapInteracting] = useState(false);
+  const [sliderInteracting, setSliderInteracting] = useState(false);
   const [quickFilter, setQuickFilter] = useState<QuickFilterState>({
     neighborhoods: [],
     food: "all",
@@ -168,6 +170,10 @@ function AppContent() {
 
       // Track bearing for sun indicator
       map.on("rotate", () => setMapBearing(map.getBearing()));
+
+      // Track map interaction for hiding UI elements
+      map.on("movestart", () => setMapInteracting(true));
+      map.on("moveend", () => setMapInteracting(false));
     },
     [setMap]
   );
@@ -259,6 +265,9 @@ function AppContent() {
     [mapRef]
   );
 
+  // Hide toggles & nav buttons when user is interacting with map, sidebar is open, or detail panel is open
+  const hideChrome = mapInteracting || sidebarOpen || !!detailPatio || sliderInteracting;
+
   return (
     <div className="relative w-full h-dvh overflow-hidden" onPointerDown={stopPlay}>
       {/* Map */}
@@ -309,75 +318,79 @@ function AppContent() {
             }}
           />
         </div>
-        {/* Patio / Rooftop / Neither toggles */}
-        <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
-          {([
-            { value: "patio" as const, emoji: "🕺", label: "Patio" },
-            { value: "rooftop" as const, emoji: "🏙️", label: "Roof" },
-            { value: "all" as const, emoji: "🤷", label: "Both" },
-          ]).map((t) => (
-            <button
-              key={t.value}
-              onClick={() => {
-                setQuickFilter((f) => ({
-                  ...f,
-                  setting: t.value === "all" ? "all" : f.setting === t.value ? "all" : t.value,
-                }));
-                setFilterPanelOpen(false);
-              }}
-              title={t.label}
-              className={`px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-0.5 ${
-                quickFilter.setting === t.value
-                  ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
-                  : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
-              }`}
-            >
-              {t.emoji} {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Top-right: nav buttons + Find a Bar + weather */}
-      <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
-        <div className="flex gap-1.5 items-center">
-          <button
-            onClick={() => setSubmitFormOpen(true)}
-            className="glass-icon-btn"
-            title="Submit a patio"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleRecenter}
-            className="glass-icon-btn"
-            title="Recenter to Old Town / River North"
-          >
-            <Crosshair className="w-5 h-5" />
-          </button>
-        </div>
-        {selectedPatioId && (
-          <button
-            onClick={handleZoomOut}
-            className="glass-panel flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
-            title="Zoom back out"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-            <span>Zoom out</span>
-          </button>
-        )}
-        {weatherDisplay && (
-          <div className="pointer-events-none select-none">
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
-              <span className="text-sm sm:text-lg">{weatherDisplay.icon}</span>
-              <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
-              <span className="text-white/30 hidden sm:inline">{weatherDisplay.label}</span>
-              <span className="text-white/15 hidden sm:inline">|</span>
-              <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
-            </div>
+        {/* Patio / Rooftop / Neither toggles — hidden during map interaction or popups */}
+        {!hideChrome && (
+          <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
+            {([
+              { value: "patio" as const, emoji: "🕺", label: "Patio" },
+              { value: "rooftop" as const, emoji: "🏙️", label: "Roof" },
+              { value: "all" as const, emoji: "🤷", label: "Both" },
+            ]).map((t) => (
+              <button
+                key={t.value}
+                onClick={() => {
+                  setQuickFilter((f) => ({
+                    ...f,
+                    setting: t.value === "all" ? "all" : f.setting === t.value ? "all" : t.value,
+                  }));
+                  setFilterPanelOpen(false);
+                }}
+                title={t.label}
+                className={`px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-0.5 ${
+                  quickFilter.setting === t.value
+                    ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
+                    : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
+                }`}
+              >
+                {t.emoji} {t.label}
+              </button>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Top-right: nav buttons + Find a Bar + weather — hidden during map interaction or popups */}
+      {!hideChrome && (
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+          <div className="flex gap-1.5 items-center">
+            <button
+              onClick={() => setSubmitFormOpen(true)}
+              className="glass-icon-btn"
+              title="Submit a patio"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleRecenter}
+              className="glass-icon-btn"
+              title="Recenter to Old Town / River North"
+            >
+              <Crosshair className="w-5 h-5" />
+            </button>
+          </div>
+          {selectedPatioId && (
+            <button
+              onClick={handleZoomOut}
+              className="glass-panel flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
+              title="Zoom back out"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+              <span>Zoom out</span>
+            </button>
+          )}
+          {weatherDisplay && (
+            <div className="pointer-events-none select-none">
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
+                <span className="text-sm sm:text-lg">{weatherDisplay.icon}</span>
+                <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
+                <span className="text-white/30 hidden sm:inline">{weatherDisplay.label}</span>
+                <span className="text-white/15 hidden sm:inline">|</span>
+                <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Mid-right: Search Bars button — hidden when sidebar is open */}
       {!sidebarOpen && (

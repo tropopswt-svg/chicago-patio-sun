@@ -197,12 +197,19 @@ export function PatioDetailPanel({
   const sliderPct = (localMinute / 1439) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-2 sm:px-4 sm:py-4">
-      <div className="absolute inset-0 bg-black/15" onClick={onClose} />
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex items-end sm:items-center justify-center px-2 sm:px-4 sm:py-4",
+        snapPoint !== 'full' && "pointer-events-none"
+      )}
+    >
+      {snapPoint === 'full' && (
+        <div className="absolute inset-0 bg-black/15" onClick={onClose} />
+      )}
 
       <div
         className={cn(
-          "relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] animate-slide-up sm:animate-none",
+          "relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] animate-slide-up sm:animate-none pointer-events-auto",
           snapPoint === 'full' ? "overflow-y-auto" : "overflow-hidden"
         )}
         style={{

@@ -19,7 +19,7 @@ export function Header({ sidebarOpen, onToggleSidebar, onTitleClick }: HeaderPro
           <h1 className="text-sm font-semibold text-white/90 leading-tight tracking-tight">
             Chicago Booze Map
           </h1>
-          <p className="text-[10px] text-white/40">Patio Sunlight Tracker</p>
+          <p className="text-xs text-white/40">Patio Sunlight Tracker</p>
         </div>
       </button>
     </header>

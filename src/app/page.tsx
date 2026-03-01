@@ -275,16 +275,19 @@ function AppContent() {
       {/* Sun direction indicator */}
       <SunIndicator date={timeState.date} mapBearing={mapBearing} />
 
-      {/* Invisible overlay to close filters when tapping on map */}
-      {filterPanelOpen && (
+      {/* Invisible overlay to close filters/sidebar when tapping on map */}
+      {(filterPanelOpen || sidebarOpen) && (
         <div
           className="absolute inset-0 z-[5]"
-          onClick={() => setFilterPanelOpen(false)}
+          onClick={() => {
+            setFilterPanelOpen(false);
+            setSidebarOpen(false);
+          }}
         />
       )}
 
       {/* Top-left: Header + Quick Filter */}
-      <div className="absolute top-3 left-3 z-10 w-44 sm:w-72">
+      <div className="absolute top-3 left-3 z-10 w-40 sm:w-72">
         <Header
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
@@ -310,8 +313,8 @@ function AppContent() {
         <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
           {([
             { value: "patio" as const, emoji: "🕺", label: "Patio" },
-            { value: "rooftop" as const, emoji: "🏙️", label: "Rooftop" },
-            { value: "all" as const, emoji: "🤷", label: "Neither" },
+            { value: "rooftop" as const, emoji: "🏙️", label: "Roof" },
+            { value: "all" as const, emoji: "🤷", label: "Both" },
           ]).map((t) => (
             <button
               key={t.value}
@@ -323,7 +326,7 @@ function AppContent() {
                 setFilterPanelOpen(false);
               }}
               title={t.label}
-              className={`px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+              className={`px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-0.5 ${
                 quickFilter.setting === t.value
                   ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                   : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -376,18 +379,20 @@ function AppContent() {
         )}
       </div>
 
-      {/* Mid-right: Search Bars button */}
-      <button
-        onClick={() => {
-          setSidebarOpen((v) => !v);
-          setFilterPanelOpen(false);
-        }}
-        className="absolute right-3 top-1/2 -translate-y-1/2 z-10 glass-panel flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-2xl text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
-        title="Browse all patios"
-      >
-        <span className="text-2xl">🍺</span>
-        <span className="text-[10px] font-semibold leading-tight">Search</span>
-      </button>
+      {/* Mid-right: Search Bars button — hidden when sidebar is open */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => {
+            setSidebarOpen(true);
+            setFilterPanelOpen(false);
+          }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 glass-panel flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-2xl text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
+          title="Browse all patios"
+        >
+          <span className="text-2xl">🍺</span>
+          <span className="text-xs font-semibold leading-tight">Search</span>
+        </button>
+      )}
 
       {/* "No sun today" toast */}
       {isLowSunDay && !noSunDismissed && (

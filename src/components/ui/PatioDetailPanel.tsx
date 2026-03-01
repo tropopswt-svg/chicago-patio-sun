@@ -209,9 +209,7 @@ export function PatioDetailPanel({
           ...(snapPoint !== 'full' || isPanelDragging
             ? { maxHeight: `${effectiveVh}vh`, transition: isPanelDragging ? 'none' : 'max-height 0.3s ease-out' }
             : {}),
-          background: "linear-gradient(160deg, rgba(15, 15, 35, 0.35) 0%, rgba(15, 15, 35, 0.25) 50%, rgba(255, 255, 255, 0.04) 100%)",
-          backdropFilter: "blur(40px) saturate(200%)",
-          WebkitBackdropFilter: "blur(40px) saturate(200%)",
+          background: "linear-gradient(160deg, rgba(20, 20, 45, 0.94) 0%, rgba(15, 15, 35, 0.97) 50%, rgba(25, 25, 50, 0.92) 100%)",
           border: "0.5px solid rgba(255, 255, 255, 0.15)",
           boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
         }}

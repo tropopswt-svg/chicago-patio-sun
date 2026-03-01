@@ -18,7 +18,7 @@ import { SubmitPatioForm } from "@/components/ui/SubmitPatioForm";
 import { PatioDetailPanel } from "@/components/ui/PatioDetailPanel";
 import { usePatioSunStatus } from "@/hooks/usePatioSunStatus";
 import { useWeatherData } from "@/hooks/useWeatherData";
-import { decodeWeatherCode, getHourlySunFactor } from "@/lib/weather-utils";
+import { decodeWeatherCode, getHourlySunFactor, getHourlyTemperature } from "@/lib/weather-utils";
 import { CHICAGO_CENTER, DEFAULT_ZOOM, DEFAULT_PITCH, DEFAULT_BEARING, NEIGHBORHOOD_LABELS } from "@/lib/constants";
 import { getNeighborhood, isFood } from "@/lib/neighborhoods";
 import { isOpenAt } from "@/lib/hours";
@@ -119,16 +119,30 @@ function AppContent() {
     [filteredPatios]
   );
 
+  const selectedHourIndex = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selected = new Date(timeState.date);
+    selected.setHours(0, 0, 0, 0);
+    const dayOffset = Math.max(0, Math.min(5, Math.round(
+      (selected.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    )));
+    return dayOffset * 24 + Math.floor(timeState.minuteOfDay / 60);
+  }, [timeState.date, timeState.minuteOfDay]);
+
   const weatherDisplay = useMemo(() => {
     if (!weather) return null;
-    const { label, icon } = decodeWeatherCode(weather.current.weatherCode);
+    const hourly = weather.hourly;
+    const hourCode = hourly?.weatherCode?.[selectedHourIndex] ?? weather.current.weatherCode;
+    const hourTemp = hourly?.temperature?.[selectedHourIndex] ?? weather.current.temperature;
+    const { label, icon } = decodeWeatherCode(hourCode);
     return {
-      temperature: Math.round(weather.current.temperature),
+      temperature: Math.round(hourTemp),
       uvIndex: weather.current.uvIndex,
       label,
       icon,
     };
-  }, [weather]);
+  }, [weather, selectedHourIndex]);
 
   // Check if today is expected to have little/no sun (avg daytime sun factor < 0.3)
   const isLowSunDay = useMemo(() => {
@@ -204,9 +218,16 @@ function AppContent() {
       setSelectedPatioId(patio.id);
       setDetailPatio(patio);
       setSidebarOpen(false);
-      flyTo(patio.lng, patio.lat);
+      // Offset center south so dot appears above the detail panel
+      mapRef.current?.flyTo({
+        center: [patio.lng, patio.lat - 0.002],
+        zoom: 15.5,
+        pitch: DEFAULT_PITCH,
+        bearing: DEFAULT_BEARING,
+        duration: 1200,
+      });
     },
-    [flyTo]
+    [mapRef]
   );
 
   const handleOpenDetail = useCallback(
@@ -215,9 +236,14 @@ function AppContent() {
       if (patio) {
         setDetailPatio(patio);
         setSelectedPatioId(id);
+        // Nudge map so dot appears above the detail panel
+        mapRef.current?.flyTo({
+          center: [patio.lng, patio.lat - 0.002],
+          duration: 800,
+        });
       }
     },
-    [filteredPatios]
+    [filteredPatios, mapRef]
   );
 
   const handleNeighborhoodFlyTo = useCallback(
@@ -303,9 +329,20 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Top-right: nav buttons + weather */}
+      {/* Top-right: Find a Bar + nav buttons + weather */}
       <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 items-center">
+          <button
+            onClick={() => {
+              setSidebarOpen((v) => !v);
+              setFilterPanelOpen(false);
+            }}
+            className="glass-panel flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-sm font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
+            title="Browse all patios"
+          >
+            <span className="text-base">🍺</span>
+            <span className="text-xs">{sidebarOpen ? "Close" : "Find a Bar"}</span>
+          </button>
           <button
             onClick={() => setSubmitFormOpen(true)}
             className="glass-icon-btn"
@@ -321,6 +358,16 @@ function AppContent() {
             <Crosshair className="w-5 h-5" />
           </button>
         </div>
+        {selectedPatioId && (
+          <button
+            onClick={handleZoomOut}
+            className="glass-panel flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
+            title="Zoom back out"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+            <span>Zoom out</span>
+          </button>
+        )}
         {weatherDisplay && (
           <div className="pointer-events-none select-none">
             <div className="flex items-center gap-1.5 text-[11px] sm:text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
@@ -331,34 +378,6 @@ function AppContent() {
               <span className="text-white/30">UV {weatherDisplay.uvIndex}</span>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Right side: Find a Bar + Zoom out */}
-      <div className="absolute right-3 top-[45%] -translate-y-1/2 z-10 flex flex-col gap-2 items-end">
-        {/* Find a Bar */}
-        <button
-          onClick={() => {
-            setSidebarOpen((v) => !v);
-            setFilterPanelOpen(false);
-          }}
-          className="glass-panel flex items-center justify-center gap-1.5 px-3 py-2.5 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
-          title="Browse all patios"
-        >
-          <span className="text-lg sm:text-2xl">🍺</span>
-          <span className="text-[10px] sm:text-xs">{sidebarOpen ? "Close" : "Find a Bar"}</span>
-        </button>
-
-        {/* Zoom-out button */}
-        {selectedPatioId && (
-          <button
-            onClick={handleZoomOut}
-            className="glass-panel flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-medium text-white/75 hover:text-white hover:bg-white/[0.12] transition-all"
-            title="Zoom back out"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-            <span>Zoom out</span>
-          </button>
         )}
       </div>
 
@@ -414,6 +433,7 @@ function AppContent() {
         minuteOfDay={timeState.minuteOfDay}
         onDateChange={setCalendarDate}
         onTimeChange={setMinuteOfDay}
+        hourlyTemperatures={weather?.hourly?.temperature}
       />
 
       {/* Patio Detail Panel */}

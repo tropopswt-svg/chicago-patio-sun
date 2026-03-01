@@ -12,9 +12,10 @@ interface PatioCardProps {
   isSelected: boolean;
   onClick: () => void;
   minuteOfDay: number;
+  temperature?: number | null;
 }
 
-export function PatioCard({ patio, isSelected, onClick, minuteOfDay }: PatioCardProps) {
+export function PatioCard({ patio, isSelected, onClick, minuteOfDay, temperature }: PatioCardProps) {
   const ref = useRef<HTMLButtonElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -109,6 +110,11 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay }: PatioCard
             {hours !== null && (
               <span className={cn("glass-badge", isOpen ? "glass-badge-open" : "glass-badge-closed")}>
                 {isOpen ? `Open · ${hours}` : `Closed · ${hours}`}
+              </span>
+            )}
+            {temperature != null && (
+              <span className="glass-badge">
+                🌡️ {Math.round(temperature)}°F
               </span>
             )}
             {busyness && (

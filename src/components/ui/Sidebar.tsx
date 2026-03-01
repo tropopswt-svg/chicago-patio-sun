@@ -24,6 +24,7 @@ interface SidebarProps {
   minuteOfDay: number;
   onDateChange: (date: Date) => void;
   onTimeChange: (minute: number) => void;
+  hourlyTemperatures?: number[];
 }
 
 function generateDayOptions(): { label: string; date: Date }[] {
@@ -51,6 +52,7 @@ export function Sidebar({
   minuteOfDay,
   onDateChange,
   onTimeChange,
+  hourlyTemperatures,
 }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [sunFilter, setSunFilter] = useState<SunStatus>("all");
@@ -76,6 +78,14 @@ export function Sidebar({
     const m = minuteOfDay % 60;
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
   }, [minuteOfDay]);
+
+  // Compute temperature at the selected day + hour
+  const currentTemperature = useMemo(() => {
+    if (!hourlyTemperatures || hourlyTemperatures.length === 0) return null;
+    const hourIndex = selectedDayIndex * 24 + Math.floor(minuteOfDay / 60);
+    const idx = Math.max(0, Math.min(hourIndex, hourlyTemperatures.length - 1));
+    return hourlyTemperatures[idx] ?? null;
+  }, [hourlyTemperatures, selectedDayIndex, minuteOfDay]);
 
   // Strip punctuation so "codys" matches "Cody's", "ranallis" matches "Ranalli's", etc.
   const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "");
@@ -265,6 +275,7 @@ export function Sidebar({
                 isSelected={patio.id === selectedPatioId}
                 onClick={() => onPatioDetail(patio)}
                 minuteOfDay={minuteOfDay}
+                temperature={currentTemperature}
               />
             ))
           )}

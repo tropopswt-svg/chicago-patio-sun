@@ -9,8 +9,8 @@ const OPEN_METEO_URL =
   "https://api.open-meteo.com/v1/forecast?" +
   "latitude=41.91&longitude=-87.635" +
   "&current=temperature_2m,relative_humidity_2m,cloud_cover,uv_index,weather_code" +
-  "&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code" +
-  "&temperature_unit=fahrenheit&timezone=America/Chicago&forecast_days=1";
+  "&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,weather_code,temperature_2m" +
+  "&temperature_unit=fahrenheit&timezone=America/Chicago&forecast_days=6";
 
 interface OpenMeteoResponse {
   current: {
@@ -26,6 +26,7 @@ interface OpenMeteoResponse {
     cloud_cover_mid: number[];
     cloud_cover_high: number[];
     weather_code: number[];
+    temperature_2m: number[];
   };
 }
 
@@ -44,6 +45,7 @@ function normalize(raw: OpenMeteoResponse): WeatherData {
       cloudCoverMid: raw.hourly.cloud_cover_mid,
       cloudCoverHigh: raw.hourly.cloud_cover_high,
       weatherCode: raw.hourly.weather_code,
+      temperature: raw.hourly.temperature_2m,
     },
   };
 }

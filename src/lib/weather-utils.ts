@@ -12,6 +12,7 @@ export interface WeatherData {
     cloudCoverMid: number[];
     cloudCoverHigh: number[];
     weatherCode: number[];
+    temperature?: number[];
   };
 }
 
@@ -42,6 +43,19 @@ export function getHourlySunFactor(
   const mid = hourly.cloudCoverMid[idx] ?? 0;
   const high = hourly.cloudCoverHigh[idx] ?? 0;
   return getCloudSunFactor(low, mid, high);
+}
+
+/**
+ * Get the hourly temperature at a given hour index.
+ * Returns null if data is missing.
+ */
+export function getHourlyTemperature(
+  hourly: WeatherData["hourly"] | undefined,
+  hour: number
+): number | null {
+  if (!hourly?.temperature || hourly.temperature.length === 0) return null;
+  const idx = Math.max(0, Math.min(hour, hourly.temperature.length - 1));
+  return hourly.temperature[idx] ?? null;
 }
 
 /**

@@ -27,14 +27,11 @@ export function TimeSlider({
   const [localMinute, setLocalMinute] = useState(minuteOfDay);
   const [isDragging, setIsDragging] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestMinuteRef = useRef(minuteOfDay);
+  const trackRef = useRef<HTMLDivElement>(null);
 
   // Sync local state from parent when not dragging
   useEffect(() => {
-    if (!isDragging) {
-      setLocalMinute(minuteOfDay);
-      latestMinuteRef.current = minuteOfDay;
-    }
+    if (!isDragging) setLocalMinute(minuteOfDay);
   }, [minuteOfDay, isDragging]);
 
   const fireChange = useCallback(
@@ -47,23 +44,53 @@ export function TimeSlider({
     [onMinuteChange]
   );
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const v = parseInt(e.target.value);
-      latestMinuteRef.current = v;
-      setLocalMinute(v);
-      fireChange(v);
+  // Compute minute from a pointer x position on the track
+  const minuteFromPointer = useCallback((clientX: number) => {
+    const el = trackRef.current;
+    if (!el) return localMinute;
+    const rect = el.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.round(pct * 1439);
+  }, [localMinute]);
+
+  const handleTrackPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      setIsDragging(true);
+      const m = minuteFromPointer(e.clientX);
+      setLocalMinute(m);
+      fireChange(m);
     },
-    [fireChange]
+    [minuteFromPointer, fireChange]
   );
 
-  const handlePointerDown = useCallback(() => setIsDragging(true), []);
-  const handlePointerUp = useCallback(() => {
-    setIsDragging(false);
-    // Flush final value immediately using ref (state may be stale on tap)
-    if (timerRef.current) clearTimeout(timerRef.current);
-    onMinuteChange(latestMinuteRef.current);
-  }, [onMinuteChange]);
+  const handleTrackPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      const m = minuteFromPointer(e.clientX);
+      setLocalMinute(m);
+      fireChange(m);
+    },
+    [isDragging, minuteFromPointer, fireChange]
+  );
+
+  const handleTrackPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      setIsDragging(false);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      const m = minuteFromPointer(e.clientX);
+      setLocalMinute(m);
+      onMinuteChange(m);
+    },
+    [isDragging, minuteFromPointer, onMinuteChange]
+  );
+
+  const handlePlayPointerDown = useCallback((e: React.PointerEvent) => {
+    // Prevent bubbling to slider wrapper (sliderInteracting) and root (stopPlay)
+    e.stopPropagation();
+  }, []);
 
   const displayMinute = isDragging ? localMinute : minuteOfDay;
   const sunrisePct = (sunriseMinute / 1440) * 100;
@@ -96,6 +123,7 @@ export function TimeSlider({
       <div className="flex items-center gap-2">
         <button
           onClick={onTogglePlay}
+          onPointerDown={handlePlayPointerDown}
           className={cn("glass-play-btn shrink-0", isPlaying && "playing")}
         >
           {isPlaying ? (
@@ -116,8 +144,16 @@ export function TimeSlider({
         {isNight && <Moon className="w-3 h-3 text-blue-300/50" />}
       </div>
 
-      {/* Track */}
-      <div className="relative">
+      {/* Track — direct pointer events for reliable mobile tap + drag */}
+      <div
+        ref={trackRef}
+        className="relative touch-none select-none cursor-pointer"
+        style={{ padding: "10px 0" }}
+        onPointerDown={handleTrackPointerDown}
+        onPointerMove={handleTrackPointerMove}
+        onPointerUp={handleTrackPointerUp}
+        onPointerCancel={handleTrackPointerUp}
+      >
         <div className="h-2.5 rounded-full overflow-hidden relative">
           <div
             className="absolute inset-0"
@@ -138,19 +174,6 @@ export function TimeSlider({
             style={{ width: `${currentPct}%` }}
           />
         </div>
-
-        <input
-          type="range"
-          min={0}
-          max={1439}
-          value={displayMinute}
-          onChange={handleChange}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onTouchEnd={handlePointerUp}
-          className="absolute w-full opacity-0 cursor-pointer"
-          style={{ top: -10, height: "calc(100% + 20px)" }}
-        />
 
         {/* Thumb */}
         <div

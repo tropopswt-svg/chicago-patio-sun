@@ -146,6 +146,9 @@ export default function MapInstance({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const shadeMapRef = useRef<unknown>(null);
   const shadeMapLayerIdsRef = useRef<string[]>([]);
+  const shadeMapClassRef = useRef<unknown>(null);
+  const wasNightRef = useRef<boolean | null>(null);
+  const shadeMapCreatingRef = useRef(false);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const hasZoomedIn = useRef(false);
   const clickCount = useRef(0);
@@ -550,17 +553,37 @@ export default function MapInstance({
       );
     }
 
-    // Hide ShadeMap layers at night, show during day
-    for (const id of shadeMapLayerIdsRef.current) {
-      if (map.getLayer(id)) {
-        map.setLayoutProperty(id, "visibility", night ? "none" : "visible");
+    // Day→Night: fully destroy ShadeMap (custom WebGL layers ignore visibility controls)
+    if (night && wasNightRef.current === false) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sm = shadeMapRef.current as any;
+      if (sm) {
+        try { sm.remove(); } catch { /* noop */ }
+        shadeMapRef.current = null;
       }
+      // Belt-and-suspenders: remove any leftover custom WebGL layers
+      for (const id of shadeMapLayerIdsRef.current) {
+        try { if (map.getLayer(id)) map.removeLayer(id); } catch { /* noop */ }
+      }
+      shadeMapLayerIdsRef.current = [];
     }
+
+    // Night→Day: recreate ShadeMap from cached class
+    if (!night && wasNightRef.current === true && shadeMapClassRef.current && !shadeMapCreatingRef.current) {
+      shadeMapCreatingRef.current = true;
+      createShadeMapInstance(map, date);
+      shadeMapCreatingRef.current = false;
+    }
+
+    // Daytime: update ShadeMap date
     if (!night) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sm = shadeMapRef.current as any;
       if (sm?.setDate) sm.setDate(date);
     }
+
+    wasNightRef.current = night;
+
     // Always keep patio layers on top
     if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
     if (map.getLayer("patios-base")) map.moveLayer("patios-base");
@@ -568,6 +591,54 @@ export default function MapInstance({
     if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
     if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
   }, [currentMinute, date]);
+
+  // Create a fresh ShadeMap instance and add it to the map (synchronous addTo)
+  function createShadeMapInstance(map: mapboxgl.Map, d: Date) {
+    const apiKey = process.env.NEXT_PUBLIC_SHADEMAP_KEY;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SMClass = shadeMapClassRef.current as any;
+    if (!apiKey || !SMClass) return;
+
+    const sm = new SMClass({
+      date: d,
+      color: "#000a1a",
+      opacity: 0.7,
+      apiKey,
+      terrainSource: {
+        maxZoom: 15,
+        tileSize: 256,
+        getSourceUrl: ({ x, y, z }: { x: number; y: number; z: number }) =>
+          `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`,
+        getElevation: ({ r, g, b }: { r: number; g: number; b: number }) =>
+          (r * 256 + g + b / 256) - 32768,
+      },
+      getFeatures: async () => {
+        await map.once("idle");
+        try {
+          return map.queryRenderedFeatures({ layers: ["3d-buildings"] });
+        } catch {
+          return [];
+        }
+      },
+    });
+
+    shadeMapRef.current = sm;
+
+    // Detect which layers ShadeMap adds so we can clean them up later
+    const layersBefore = new Set((map.getStyle()?.layers || []).map((l) => l.id));
+    sm.addTo(map);
+    const layersAfter = (map.getStyle()?.layers || []).map((l) => l.id);
+    shadeMapLayerIdsRef.current = layersAfter.filter((id) => !layersBefore.has(id));
+
+    // Keep patio layers above ShadeMap
+    if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
+    if (map.getLayer("patios-base")) map.moveLayer("patios-base");
+    if (map.getLayer("patios-selected-glow")) map.moveLayer("patios-selected-glow");
+    if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
+    if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
+
+    onShadeMapReady(sm);
+  }
 
   async function loadShadeMap(map: mapboxgl.Map) {
     try {
@@ -577,52 +648,15 @@ export default function MapInstance({
       await map.once("idle");
 
       const ShadeMap = (await import("mapbox-gl-shadow-simulator")).default;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sm = new (ShadeMap as any)({
-        date: date,
-        color: "#000a1a",
-        opacity: 0.7,
-        apiKey,
-        terrainSource: {
-          maxZoom: 15,
-          tileSize: 256,
-          getSourceUrl: ({ x, y, z }: { x: number; y: number; z: number }) =>
-            `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`,
-          getElevation: ({ r, g, b }: { r: number; g: number; b: number }) =>
-            (r * 256 + g + b / 256) - 32768,
-        },
-        getFeatures: async () => {
-          await map.once("idle");
-          try {
-            return map.queryRenderedFeatures({ layers: ["3d-buildings"] });
-          } catch {
-            return [];
-          }
-        },
-      });
+      shadeMapClassRef.current = ShadeMap;
 
-      shadeMapRef.current = sm;
+      const night = !isSunUp(date);
+      wasNightRef.current = night;
 
-      // Always add ShadeMap, but detect its layers so we can hide them at night
-      const layersBefore = new Set((map.getStyle()?.layers || []).map((l) => l.id));
-      sm.addTo(map);
-      const layersAfter = (map.getStyle()?.layers || []).map((l) => l.id);
-      shadeMapLayerIdsRef.current = layersAfter.filter((id) => !layersBefore.has(id));
+      // At night, don't add ShadeMap at all — it will be created on night→day transition
+      if (night) return;
 
-      // If night right now, immediately hide ShadeMap layers
-      if (!isSunUp(date)) {
-        for (const id of shadeMapLayerIdsRef.current) {
-          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
-        }
-      }
-
-      // Keep patio layers above ShadeMap
-      if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
-      if (map.getLayer("patios-base")) map.moveLayer("patios-base");
-      if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
-      if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
-
-      onShadeMapReady(sm);
+      createShadeMapInstance(map, date);
     } catch (err) {
       console.warn("ShadeMap failed to load:", err);
     }

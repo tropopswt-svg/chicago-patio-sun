@@ -149,9 +149,19 @@ export default function MapInstance({
   const clickCount = useRef(0);
   const onOpenDetailRef = useRef(onOpenDetail);
   onOpenDetailRef.current = onOpenDetail;
+  const lastDataKeyRef = useRef("");
+
   const updatePatioLayers = useCallback(() => {
     const map = mapRef.current;
     if (!map || !map.getSource("patios")) return;
+
+    // Build a fingerprint so we skip setData when nothing changed
+    const key = patiosWithStatus.map((p) =>
+      `${p.id}:${p.inSun ? 1 : 0}:${p.id === selectedPatioId ? 1 : 0}`
+    ).join("|");
+
+    if (key === lastDataKeyRef.current) return;
+    lastDataKeyRef.current = key;
 
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",

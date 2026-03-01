@@ -53,7 +53,7 @@ function AppContent() {
   const { patios, isLoading, refreshPatios } = usePatioData();
   const { buildingIndex } = useBuildingData();
   const { weather } = useWeatherData();
-  const { patiosWithStatus, sunCount, shadeCount, classifyPatios } =
+  const { patiosWithStatus, sunCount, shadeCount } =
     usePatioSunStatus(patios, buildingIndex, timeState.date, weather);
 
   // Pre-compute neighborhood for each patio
@@ -69,6 +69,9 @@ function AppContent() {
     () => new Set(patioNeighborhoods.values()),
     [patioNeighborhoods]
   );
+
+  // Stable time reference for hours filter (only changes per-minute, not per-render)
+  const currentMinute = timeState.minuteOfDay;
 
   // Apply quick filters — remove dots from the map
   const filteredPatios = useMemo(() => {
@@ -108,7 +111,8 @@ function AppContent() {
       }
       return true;
     });
-  }, [patiosWithStatus, quickFilter, patioNeighborhoods, timeState.date]);
+    // currentMinute ensures we only recompute when the minute ticks, not on every Date reference
+  }, [patiosWithStatus, quickFilter, patioNeighborhoods, currentMinute]);
 
   const filteredSunCount = useMemo(
     () => filteredPatios.filter((p) => p.inSun).length,
@@ -170,12 +174,6 @@ function AppContent() {
 
   const handleShadeMapReady = useCallback(() => {}, []);
 
-  // Reclassify when patios data, building data, or time changes
-  useEffect(() => {
-    if (patios.length > 0 && buildingIndex) {
-      classifyPatios();
-    }
-  }, [patios, buildingIndex, classifyPatios]);
 
   const handleRecenter = useCallback(() => {
     mapRef.current?.flyTo({

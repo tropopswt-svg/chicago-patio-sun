@@ -228,7 +228,7 @@ export function PatioDetailPanel({
 
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 glass-icon-btn w-9 h-9"
+          className="absolute top-3 right-3 z-10 glass-icon-btn"
         >
           <X className="w-4 h-4" />
         </button>
@@ -366,7 +366,7 @@ export function PatioDetailPanel({
             </div>
 
             {/* Hour labels */}
-            <div className="flex justify-between text-[10px] text-white/30 px-0.5">
+            <div className="flex justify-between text-xs text-white/30 px-0.5">
               <span>12a</span>
               <span>6a</span>
               <span>12p</span>

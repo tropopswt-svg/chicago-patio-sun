@@ -72,7 +72,7 @@ export function SubmitPatioForm({ isOpen, onClose, onSuccess }: SubmitPatioFormP
       <div className="glass-panel relative w-full max-w-md rounded-[24px] p-6">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/35 hover:text-white/65 hover:bg-white/[0.08] transition-all"
+          className="absolute top-3 right-3 glass-icon-btn"
         >
           <X className="w-5 h-5" />
         </button>

@@ -154,7 +154,7 @@ export function QuickFilter({
 
       {/* Filter panel */}
       {isOpen && (
-        <div className="glass-panel rounded-[20px] p-3 w-[calc(100vw-2rem)] sm:w-80 mt-2 quick-filter-enter">
+        <div className="glass-panel rounded-[20px] p-3 w-[min(calc(100vw-2rem),20rem)] sm:w-80 mt-2 quick-filter-enter">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white/90 font-semibold text-xs tracking-tight">
@@ -162,18 +162,18 @@ export function QuickFilter({
             </h3>
             <button
               onClick={onToggle}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.08] transition-all"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.08] transition-all -mr-2"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Neighborhood section */}
           <div className="mb-3">
-            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-1.5 block">
               Neighborhood
             </label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {displayedNeighborhoods.map((name) => (
                 <button
                   key={name}
@@ -205,7 +205,7 @@ export function QuickFilter({
 
           {/* Food section */}
           <div className="mb-3">
-            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-1.5 block">
               Food
             </label>
             <div className="flex gap-1.5">
@@ -224,7 +224,7 @@ export function QuickFilter({
 
           {/* Setting section */}
           <div className="mb-3">
-            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-1.5 block">
               Setting
             </label>
             <div className="flex gap-1.5">
@@ -243,7 +243,7 @@ export function QuickFilter({
 
           {/* Hours section */}
           <div className="mb-3">
-            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-1.5 block">
               Hours
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -273,7 +273,7 @@ export function QuickFilter({
 
           {/* Sun preference */}
           <div className="mb-3">
-            <label className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1.5 block">
+            <label className="text-white/35 text-xs font-medium uppercase tracking-wider mb-1.5 block">
               Sunlight
             </label>
             <div className="flex gap-1.5">
@@ -292,7 +292,7 @@ export function QuickFilter({
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
-            <span className="text-[11px] text-white/35">
+            <span className="text-xs text-white/35">
               <span className="text-white/65 font-medium">{filteredCount}</span>
               {filteredCount !== totalCount && ` of ${totalCount}`} patios
             </span>
@@ -300,14 +300,14 @@ export function QuickFilter({
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearAll}
-                  className="text-[11px] text-white/40 hover:text-white/65 transition-colors"
+                  className="text-xs text-white/40 hover:text-white/65 transition-colors"
                 >
                   Clear all
                 </button>
               )}
               <button
                 onClick={onToggle}
-                className="px-3.5 py-1.5 rounded-full bg-white/15 text-[11px] font-semibold text-white/90 hover:bg-white/25 transition-all"
+                className="px-4 py-2 rounded-full bg-white/15 text-xs font-semibold text-white/90 hover:bg-white/25 transition-all"
               >
                 Done
               </button>

@@ -57,6 +57,7 @@ export function Sidebar({
   const [search, setSearch] = useState("");
   const [sunFilter, setSunFilter] = useState<SunStatus>("all");
   const [hoursStatus, setHoursStatus] = useState<HoursStatus>("all");
+  const [showDayPicker, setShowDayPicker] = useState(false);
 
   const dayOptions = useMemo(() => generateDayOptions(), []);
 
@@ -128,7 +129,7 @@ export function Sidebar({
       className={cn(
         "absolute z-20 transition-transform duration-300",
         // Mobile: bottom sheet
-        "bottom-0 left-0 right-0 h-[85vh]",
+        "bottom-0 left-0 right-0 h-[85dvh]",
         // Desktop: right sidebar (unchanged)
         "sm:top-0 sm:right-0 sm:left-auto sm:bottom-auto sm:h-full sm:w-80 md:w-96",
         isOpen
@@ -169,33 +170,49 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Day picker pills */}
-        <div className="order-4 px-4 pb-2 flex gap-1 flex-wrap">
-          {dayOptions.map((day, i) => (
+        {/* Day picker + Time input */}
+        <div className="order-4 px-4 pb-2 flex items-center gap-2">
+          <div className="relative">
             <button
-              key={i}
-              onClick={() => handleDaySelect(i)}
-              className={cn(
-                "glass-pill",
-                selectedDayIndex === i && "glass-pill-amber"
-              )}
+              onClick={() => setShowDayPicker((v) => !v)}
+              className={cn("glass-pill", "glass-pill-amber")}
             >
-              {day.label}
+              {dayOptions[selectedDayIndex]?.label ?? "Today"}
             </button>
-          ))}
-        </div>
-
-        {/* Time input */}
-        <div className="order-5 px-4 pb-2 flex items-center gap-2">
+            {showDayPicker && (
+              <div className="absolute top-full left-0 mt-1 z-30 flex gap-1 p-1.5 rounded-2xl quick-filter-enter"
+                style={{
+                  background: "linear-gradient(160deg, rgba(15, 15, 35, 0.7) 0%, rgba(255, 255, 255, 0.06) 100%)",
+                  backdropFilter: "blur(40px) saturate(200%)",
+                  WebkitBackdropFilter: "blur(40px) saturate(200%)",
+                  border: "0.5px solid rgba(255, 255, 255, 0.15)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                }}
+              >
+                {dayOptions.map((day, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      handleDaySelect(i);
+                      setShowDayPicker(false);
+                    }}
+                    className={cn(
+                      "glass-pill whitespace-nowrap",
+                      selectedDayIndex === i && "glass-pill-amber"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <input
             type="time"
             value={timeValue}
             onChange={handleTimeInput}
             className="glass-input px-3 py-1.5 text-sm w-[120px]"
           />
-          <span className="text-white/40 text-xs">
-            {format(currentTime, "h:mm a")}
-          </span>
         </div>
 
         {/* Status filter pills */}
@@ -258,7 +275,7 @@ export function Sidebar({
         </div>
 
         {/* Patio list */}
-        <div className="order-7 flex-1 overflow-y-auto px-2 pb-4 space-y-1 min-h-0 pb-safe">
+        <div className="order-7 flex-1 overflow-y-auto px-2 pb-4 space-y-2 min-h-0 pb-safe">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-white/15 border-t-white/50 rounded-full animate-spin" />

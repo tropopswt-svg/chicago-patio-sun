@@ -53,16 +53,16 @@ export function TimeSlider({
         <button
           onClick={onTogglePlay}
           className={cn(
-            "w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0",
+            "w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0",
             isPlaying
               ? "bg-white/20 text-white"
               : "bg-white/10 text-white/60 hover:bg-white/15 hover:text-white"
           )}
         >
           {isPlaying ? (
-            <Pause className="w-3 h-3" />
+            <Pause className="w-4 h-4" />
           ) : (
-            <Play className="w-3 h-3 ml-0.5" />
+            <Play className="w-4 h-4 ml-0.5" />
           )}
         </button>
         <span

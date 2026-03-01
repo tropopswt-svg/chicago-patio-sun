@@ -133,7 +133,7 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay, temperature
             )}
           </div>
           {patio.sunTag && (
-            <span className="block mt-1 text-[11px] text-white/40">
+            <span className="block mt-1 text-xs text-white/40">
               {patio.sunTag}
             </span>
           )}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
 import { Play, Pause, Moon } from "lucide-react";
 import { formatMinuteOfDay } from "@/lib/suncalc-utils";
 import { cn } from "@/lib/utils";
@@ -22,55 +21,32 @@ export function TimeSlider({
   onTogglePlay,
 }: TimeSliderProps) {
   const { minuteOfDay, isPlaying, isNight } = timeState;
-  const [isDragging, setIsDragging] = useState(false);
-  const [isFading, setIsFading] = useState(false);
-  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const sunrisePct = (sunriseMinute / 1440) * 100;
   const sunsetPct = (sunsetMinute / 1440) * 100;
   const currentPct = (minuteOfDay / 1440) * 100;
 
-  const handleDragStart = useCallback(() => {
-    if (fadeTimer.current) clearTimeout(fadeTimer.current);
-    setIsFading(false);
-    setIsDragging(true);
-  }, []);
-
-  const handleDragEnd = useCallback(() => {
-    setIsFading(true);
-    fadeTimer.current = setTimeout(() => {
-      setIsDragging(false);
-      setIsFading(false);
-    }, 500);
-  }, []);
-
   return (
     <div className="relative space-y-1.5">
-      {/* Large floating time popup — appears during drag or playback, follows thumb */}
-      {(isDragging || isPlaying) && (
-        <div
-          className="absolute z-20 pointer-events-none -translate-x-1/2"
+      {/* Large floating time — always visible, follows thumb */}
+      <div
+        className="absolute z-20 pointer-events-none -translate-x-1/2"
+        style={{
+          left: `${currentPct}%`,
+          bottom: 40,
+          transition: "left 0.05s linear",
+        }}
+      >
+        <span
+          className="text-4xl font-semibold tracking-tight whitespace-nowrap"
           style={{
-            left: `${currentPct}%`,
-            bottom: 40,
-            transition: isFading
-              ? "opacity 0.5s ease-out"
-              : "left 0.05s linear",
-            opacity: isFading ? 0 : 1,
+            color: "rgba(255,255,255,0.85)",
+            textShadow:
+              "0 2px 16px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.4)",
           }}
         >
-          <span
-            className="text-4xl font-semibold tracking-tight whitespace-nowrap"
-            style={{
-              color: "rgba(255,255,255,0.85)",
-              textShadow:
-                "0 2px 16px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.4)",
-            }}
-          >
-            {formatMinuteOfDay(minuteOfDay)}
-          </span>
-        </div>
-      )}
+          {formatMinuteOfDay(minuteOfDay)}
+        </span>
+      </div>
 
       {/* Time + play button row */}
       <div className="flex items-center gap-2">
@@ -130,10 +106,6 @@ export function TimeSlider({
           max={1439}
           value={minuteOfDay}
           onChange={(e) => onMinuteChange(parseInt(e.target.value))}
-          onMouseDown={handleDragStart}
-          onMouseUp={handleDragEnd}
-          onTouchStart={handleDragStart}
-          onTouchEnd={handleDragEnd}
           className="absolute inset-0 w-full h-2.5 opacity-0 cursor-pointer"
         />
 

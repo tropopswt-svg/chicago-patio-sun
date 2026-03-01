@@ -25,11 +25,9 @@ const MANUAL_INTERVAL = 100; // 100ms
 
 export function useTimeControl() {
   const now = new Date();
-  const sunrise = getSunriseMinute(now);
-  const startMinute = Math.max(sunrise, 480); // whichever is later: sunrise or 8 AM
-  const [date, setDate] = useState<Date>(() => dateFromMinute(now, startMinute));
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isAutoplay, setIsAutoplay] = useState(true);
+  const [date, setDate] = useState<Date>(() => now);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isAutoplay, setIsAutoplay] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const minuteOfDay = getMinuteOfDay(date);

@@ -24,6 +24,8 @@ function cleanup() {
 
 function getLimit(pathname: string): number {
   if (pathname === "/api/patios/submit") return 5;
+  if (pathname === "/api/auth/login" || pathname === "/api/auth/signup") return 10;
+  if (pathname.startsWith("/api/auth/")) return 30;
   if (pathname === "/api/patio-photo" || pathname === "/api/patio-busyness")
     return 30;
   return 60;

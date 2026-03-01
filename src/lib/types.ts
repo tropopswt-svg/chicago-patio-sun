@@ -52,3 +52,15 @@ export interface TimeState {
   isPlaying: boolean;
   isNight: boolean;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  passwordHash: string;
+  favorites: string[];
+  createdAt: string;
+}
+
+export type SafeUser = Omit<User, "passwordHash">;

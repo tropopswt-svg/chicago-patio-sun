@@ -27,16 +27,6 @@ import type { PatioWithSunStatus } from "@/lib/types";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
-const DEWITT_ROOFTOP_PHOTOS = ["/rooftop-dewitt-1.jpg", "/rooftop-dewitt-2.jpg"];
-const DEWITT_ROOFTOP_COORDS: [[number, number], [number, number], [number, number], [number, number]] = [
-  [-87.62925, 41.89810],  // NW
-  [-87.62875, 41.89810],  // NE
-  [-87.62875, 41.89770],  // SE
-  [-87.62925, 41.89770],  // SW
-];
-const ROOFTOP_MIN_ZOOM = 17;
-const ROOFTOP_FULL_ZOOM = 18;
-const ROOFTOP_CYCLE_MS = 5500;
 
 interface MapInstanceProps {
   onMapReady: (map: mapboxgl.Map) => void;
@@ -163,8 +153,6 @@ export default function MapInstance({
   onOpenDetailRef.current = onOpenDetail;
   const lastDataKeyRef = useRef("");
   const lastLightMinuteRef = useRef(-1);
-  const rooftopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const rooftopMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   const updatePatioLayers = useCallback(() => {
     const map = mapRef.current;
@@ -407,70 +395,6 @@ export default function MapInstance({
       // Move neighborhood labels above patio dots
       map.moveLayer("neighborhood-labels");
 
-      // ── Rooftop photo overlay (860 N DeWitt Place) ──
-      // DOM-based overlay so it renders above 3D buildings
-      const rooftopCenter: [number, number] = [
-        (DEWITT_ROOFTOP_COORDS[0][0] + DEWITT_ROOFTOP_COORDS[1][0]) / 2,
-        (DEWITT_ROOFTOP_COORDS[0][1] + DEWITT_ROOFTOP_COORDS[2][1]) / 2,
-      ];
-
-      const overlayEl = document.createElement("div");
-      overlayEl.className = "rooftop-overlay";
-      overlayEl.style.cssText =
-        "position:relative;width:180px;height:140px;border-radius:10px;overflow:hidden;" +
-        "opacity:0;transition:opacity 0.6s ease;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,0.5);";
-
-      const imgA = document.createElement("img");
-      imgA.src = DEWITT_ROOFTOP_PHOTOS[0];
-      imgA.style.cssText =
-        "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" +
-        "opacity:1;transition:opacity 1s ease;";
-      const imgB = document.createElement("img");
-      imgB.src = DEWITT_ROOFTOP_PHOTOS[1];
-      imgB.style.cssText =
-        "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" +
-        "opacity:0;transition:opacity 1s ease;";
-
-      overlayEl.appendChild(imgA);
-      overlayEl.appendChild(imgB);
-
-      rooftopMarkerRef.current = new mapboxgl.Marker({
-        element: overlayEl,
-        anchor: "center",
-      })
-        .setLngLat(rooftopCenter)
-        .addTo(map);
-
-      let rooftopShowingA = true;
-
-      function updateRooftopVisibility() {
-        const z = map.getZoom();
-        if (z >= ROOFTOP_MIN_ZOOM) {
-          const t = Math.min(1, (z - ROOFTOP_MIN_ZOOM) / (ROOFTOP_FULL_ZOOM - ROOFTOP_MIN_ZOOM));
-          overlayEl.style.opacity = String(t * 0.9);
-          if (!rooftopTimerRef.current) {
-            rooftopTimerRef.current = setInterval(() => {
-              rooftopShowingA = !rooftopShowingA;
-              imgA.style.opacity = rooftopShowingA ? "1" : "0";
-              imgB.style.opacity = rooftopShowingA ? "0" : "1";
-            }, ROOFTOP_CYCLE_MS);
-          }
-        } else {
-          overlayEl.style.opacity = "0";
-          if (rooftopTimerRef.current) {
-            clearInterval(rooftopTimerRef.current);
-            rooftopTimerRef.current = null;
-          }
-          rooftopShowingA = true;
-          imgA.style.opacity = "1";
-          imgB.style.opacity = "0";
-        }
-      }
-
-      map.on("zoom", updateRooftopVisibility);
-      // Set initial state in case already zoomed in
-      updateRooftopVisibility();
-
       // ── Click handlers ──
       map.on("click", "patios-base", (e) => {
         hasZoomedIn.current = true;
@@ -524,11 +448,6 @@ export default function MapInstance({
     });
 
     return () => {
-      if (rooftopTimerRef.current) {
-        clearInterval(rooftopTimerRef.current);
-        rooftopTimerRef.current = null;
-      }
-      rooftopMarkerRef.current?.remove();
       map.remove();
       mapRef.current = null;
     };

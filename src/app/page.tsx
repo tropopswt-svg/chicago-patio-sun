@@ -2,15 +2,18 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Crosshair, Plus, ZoomOut, X, Sun } from "lucide-react";
+import { Crosshair, Plus, ZoomOut, X, Sun, User } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
 import { MapProvider, useMapContext } from "@/components/providers/MapProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { Header } from "@/components/ui/Header";
 import { TimeSlider } from "@/components/ui/TimeSlider";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { SunIndicator } from "@/components/ui/SunIndicator";
 import { QuickFilter } from "@/components/ui/QuickFilter";
+import { AuthModal } from "@/components/ui/AuthModal";
+import { SignupNudge } from "@/components/ui/SignupNudge";
 import { useTimeControl } from "@/hooks/useTimeControl";
 import { usePatioData } from "@/hooks/usePatioData";
 import { useBuildingData } from "@/hooks/useBuildingData";
@@ -18,6 +21,7 @@ import { SubmitPatioForm } from "@/components/ui/SubmitPatioForm";
 import { PatioDetailPanel } from "@/components/ui/PatioDetailPanel";
 import { usePatioSunStatus } from "@/hooks/usePatioSunStatus";
 import { useWeatherData } from "@/hooks/useWeatherData";
+import { useClickNudge } from "@/hooks/useClickNudge";
 import { decodeWeatherCode, getHourlySunFactor, getHourlyTemperature } from "@/lib/weather-utils";
 import { CHICAGO_CENTER, DEFAULT_ZOOM, DEFAULT_PITCH, DEFAULT_BEARING, NEIGHBORHOOD_LABELS } from "@/lib/constants";
 import { getNeighborhood, isFood } from "@/lib/neighborhoods";
@@ -31,16 +35,19 @@ const MapInstance = dynamic(
 
 function AppContent() {
   const { mapRef, setMap, flyTo } = useMapContext();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedPatioId, setSelectedPatioId] = useState<string | null>(null);
   const [mapBearing, setMapBearing] = useState(0);
   const [submitFormOpen, setSubmitFormOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [detailPatio, setDetailPatio] = useState<PatioWithSunStatus | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [noSunDismissed, setNoSunDismissed] = useState(false);
   const [mapInteracting, setMapInteracting] = useState(false);
   const [sliderInteracting, setSliderInteracting] = useState(false);
+  const { showNudge, recordClick, dismissNudge } = useClickNudge(!!user);
   const [quickFilter, setQuickFilter] = useState<QuickFilterState>({
     neighborhoods: [],
     food: "all",
@@ -265,11 +272,13 @@ function AppContent() {
     [mapRef]
   );
 
-  // Hide toggles & nav buttons when user is interacting with map, sidebar is open, or detail panel is open
-  const hideChrome = mapInteracting || sidebarOpen || !!detailPatio || sliderInteracting;
+  // Hide nav/search when map interaction, sidebar, or detail panel is open (NOT slider)
+  const hideChrome = mapInteracting || sidebarOpen || !!detailPatio;
+  // Hide toggles for all of the above PLUS slider interaction
+  const hideToggles = hideChrome || sliderInteracting;
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden" onPointerDown={stopPlay}>
+    <div className="relative w-full h-dvh overflow-hidden" onPointerDown={stopPlay} onClick={recordClick}>
       {/* Map */}
       <MapInstance
         onMapReady={handleMapReady}
@@ -318,8 +327,8 @@ function AppContent() {
             }}
           />
         </div>
-        {/* Patio / Rooftop / Neither toggles — hidden during map interaction or popups */}
-        {!hideChrome && (
+        {/* Patio / Rooftop / Neither toggles — hidden during map interaction, popups, or slider */}
+        {!hideToggles && (
           <div className="glass-panel rounded-full flex p-0.5 gap-0.5 mt-2 w-fit">
             {([
               { value: "patio" as const, emoji: "🕺", label: "Patio" },
@@ -353,6 +362,19 @@ function AppContent() {
       {!hideChrome && (
         <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
           <div className="flex gap-1.5 items-center">
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="glass-icon-btn"
+              title={user ? "Account" : "Sign in"}
+            >
+              {user ? (
+                <span className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xs font-bold text-white">
+                  {user.firstName[0]}
+                </span>
+              ) : (
+                <User className="w-5 h-5" />
+              )}
+            </button>
             <button
               onClick={() => setSubmitFormOpen(true)}
               className="glass-icon-btn"
@@ -484,6 +506,22 @@ function AppContent() {
         isOpen={submitFormOpen}
         onClose={() => setSubmitFormOpen(false)}
         onSuccess={refreshPatios}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
+
+      {/* Signup Nudge */}
+      <SignupNudge
+        show={showNudge}
+        onDismiss={dismissNudge}
+        onOpenAuth={() => {
+          dismissNudge();
+          setAuthModalOpen(true);
+        }}
       />
 
       {/* About popup */}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
-import { X, MapPin, Building2, Play, Pause } from "lucide-react";
+import { X, MapPin, Building2, Play, Pause, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { usePatioPhoto } from "@/hooks/usePatioPhoto";
 import { usePatioBusyness, getBusynessLevel } from "@/hooks/usePatioBusyness";
 import { isPatioInShadow } from "@/lib/shadow-calc";
@@ -89,6 +90,7 @@ export function PatioDetailPanel({
     setIsPanelDragging(false);
   }, [isPanelDragging, currentSnapVh, panelDragDelta]);
 
+  const { user, isFavorite, toggleFavorite } = useAuth();
   const { photoUrl, hours, isOpen } = usePatioPhoto(patio, !!patio);
   const { forecast } = usePatioBusyness(patio, !!patio);
 
@@ -260,7 +262,23 @@ export function PatioDetailPanel({
         <div className="p-4 space-y-3 pb-safe">
           {/* Name + address */}
           <div>
-            <h2 className="text-lg font-semibold text-white/95 tracking-tight">{patio.name}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-white/95 tracking-tight">{patio.name}</h2>
+              {user && (
+                <button
+                  onClick={() => toggleFavorite(patio.id)}
+                  className="shrink-0 transition-transform active:scale-90"
+                  title={isFavorite(patio.id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart
+                    className={cn(
+                      "w-5 h-5 transition-colors",
+                      isFavorite(patio.id) ? "fill-red-500 text-red-500" : "text-white/30 hover:text-white/60"
+                    )}
+                  />
+                </button>
+              )}
+            </div>
             {patio.address && (
               <p className="text-xs text-white/45 flex items-center gap-1.5 mt-0.5">
                 <MapPin className="w-3 h-3 shrink-0" />

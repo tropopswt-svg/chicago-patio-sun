@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { MapPin, Sun, Cloud } from "lucide-react";
+import { MapPin, Sun, Cloud, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { usePatioPhoto } from "@/hooks/usePatioPhoto";
 import { usePatioBusyness, getBusynessLevel } from "@/hooks/usePatioBusyness";
 import type { PatioWithSunStatus } from "@/lib/types";
@@ -16,6 +17,7 @@ interface PatioCardProps {
 }
 
 export function PatioCard({ patio, isSelected, onClick, minuteOfDay, temperature }: PatioCardProps) {
+  const { user, isFavorite, toggleFavorite } = useAuth();
   const ref = useRef<HTMLButtonElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -84,9 +86,27 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay, temperature
         )}
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium text-white/90 truncate tracking-tight">
-            {patio.name}
-          </h3>
+          <div className="flex items-center gap-1">
+            <h3 className="text-sm font-medium text-white/90 truncate tracking-tight flex-1">
+              {patio.name}
+            </h3>
+            {user && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(patio.id);
+                }}
+                className="shrink-0 transition-transform active:scale-90"
+              >
+                <Heart
+                  className={cn(
+                    "w-3.5 h-3.5 transition-colors",
+                    isFavorite(patio.id) ? "fill-red-500 text-red-500" : "text-white/20 hover:text-white/50"
+                  )}
+                />
+              </button>
+            )}
+          </div>
           {patio.address && (
             <p className="text-xs text-white/35 truncate flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3 shrink-0" />

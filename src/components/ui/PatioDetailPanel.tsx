@@ -51,44 +51,38 @@ export function PatioDetailPanel({
   const [localMinute, setLocalMinute] = useState(minuteOfDay);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Panel drag-to-resize state
-  const [snapPoint, setSnapPoint] = useState<'full' | 'mid' | 'min'>('full');
+  // Panel drag-to-resize state — fully continuous, no snap points
+  const [panelVh, setPanelVh] = useState(75);
   const panelDragStartY = useRef(0);
-  const [panelDragDelta, setPanelDragDelta] = useState(0);
+  const panelDragStartVh = useRef(75);
   const [isPanelDragging, setIsPanelDragging] = useState(false);
-
-  const SNAP_VH = { full: 75, mid: 40, min: 18 };
-  const currentSnapVh = SNAP_VH[snapPoint];
-  const effectiveVh = isPanelDragging
-    ? Math.max(15, Math.min(80, currentSnapVh - (panelDragDelta / (typeof window !== 'undefined' ? window.innerHeight : 800)) * 100))
-    : currentSnapVh;
 
   // Reset to full height when a new patio opens
   useEffect(() => {
-    if (patio) setSnapPoint('full');
+    if (patio) setPanelVh(75);
   }, [patio]);
 
   const onHandlePointerDown = useCallback((e: React.PointerEvent) => {
     setIsPanelDragging(true);
     panelDragStartY.current = e.clientY;
+    panelDragStartVh.current = panelVh;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, []);
+  }, [panelVh]);
 
   const onHandlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isPanelDragging) return;
-    setPanelDragDelta(e.clientY - panelDragStartY.current);
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const deltaVh = ((e.clientY - panelDragStartY.current) / vh) * 100;
+    const newVh = Math.max(10, Math.min(80, panelDragStartVh.current - deltaVh));
+    setPanelVh(newVh);
   }, [isPanelDragging]);
 
   const onHandlePointerUp = useCallback(() => {
     if (!isPanelDragging) return;
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const h = Math.max(15, Math.min(80, currentSnapVh - (panelDragDelta / vh) * 100));
-    if (h > 55) setSnapPoint('full');
-    else if (h > 27) setSnapPoint('mid');
-    else setSnapPoint('min');
-    setPanelDragDelta(0);
+    // If dragged below 8vh, close the panel
+    if (panelVh < 8) onClose();
     setIsPanelDragging(false);
-  }, [isPanelDragging, currentSnapVh, panelDragDelta]);
+  }, [isPanelDragging, panelVh, onClose]);
 
   const { user, isFavorite, toggleFavorite } = useAuth();
   const { photoUrl, hours, isOpen } = usePatioPhoto(patio, !!patio);
@@ -204,29 +198,18 @@ export function PatioDetailPanel({
 
   return (
     <div
-      className={cn(
-        "fixed inset-0 z-50 flex items-end sm:items-center justify-center px-2 sm:px-4 sm:py-4",
-        snapPoint !== 'full' && "pointer-events-none"
-      )}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-2 sm:px-4 sm:py-4"
     >
-      {snapPoint === 'full' && (
-        <div className="absolute inset-0 bg-black/15" onClick={onClose} />
-      )}
+      <div className="absolute inset-0" onClick={onClose} />
 
       <div
-        className={cn(
-          "relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] animate-slide-up sm:animate-none pointer-events-auto",
-          snapPoint === 'full' ? "overflow-y-auto" : "overflow-hidden"
-        )}
+        className="relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden animate-slide-up sm:animate-none pointer-events-auto overflow-y-auto"
         style={{
-          ...(snapPoint !== 'full' || isPanelDragging
-            ? { maxHeight: `${effectiveVh}vh`, transition: isPanelDragging ? 'none' : 'max-height 0.3s ease-out' }
-            : {}),
-          background: "linear-gradient(160deg, rgba(20, 20, 45, 0.45) 0%, rgba(15, 15, 35, 0.5) 50%, rgba(25, 25, 50, 0.4) 100%)",
-          backdropFilter: "blur(24px) saturate(1.4)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
-          border: "0.5px solid rgba(255, 255, 255, 0.2)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+          maxHeight: `${panelVh}vh`,
+          transition: isPanelDragging ? 'none' : 'max-height 0.3s ease-out',
+          background: "linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 50%, rgba(255, 255, 255, 0.04) 100%)",
+          border: "0.5px solid rgba(255, 255, 255, 0.25)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.1)",
         }}
       >
         {/* Drag handle (mobile) — drag to resize */}
@@ -251,7 +234,10 @@ export function PatioDetailPanel({
           {/* Name + address */}
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-white/95 tracking-tight">{patio.name}</h2>
+              <h2
+                className="text-lg font-semibold tracking-tight"
+                style={{ color: "#fff", textShadow: "0 0 12px rgba(255,255,255,0.5), 0 0 30px rgba(255,184,0,0.3)" }}
+              >{patio.name}</h2>
               {user && (
                 <button
                   onClick={() => toggleFavorite(patio.id)}
@@ -268,7 +254,10 @@ export function PatioDetailPanel({
               )}
             </div>
             {patio.address && (
-              <p className="text-xs text-white/45 flex items-center gap-1.5 mt-0.5">
+              <p
+                className="text-xs flex items-center gap-1.5 mt-0.5"
+                style={{ color: "rgba(255,255,255,0.75)", textShadow: "0 0 8px rgba(255,255,255,0.3)" }}
+              >
                 <MapPin className="w-3 h-3 shrink-0" />
                 {patio.address}
               </p>
@@ -291,7 +280,10 @@ export function PatioDetailPanel({
           </div>
 
           {/* Date header */}
-          <div className="text-xs text-white/40 font-medium uppercase tracking-wider">
+          <div
+            className="text-xs font-medium uppercase tracking-wider"
+            style={{ color: "rgba(255,255,255,0.6)", textShadow: "0 0 6px rgba(255,255,255,0.2)" }}
+          >
             {today}
           </div>
 
@@ -312,24 +304,32 @@ export function PatioDetailPanel({
                     )}
                   </button>
                 )}
-                <span className="text-xl font-semibold text-white/90 tabular-nums">
+                <span
+                  className="text-xl font-semibold tabular-nums"
+                  style={{ color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.5), 0 0 24px rgba(255,184,0,0.25)" }}
+                >
                   {formatTime(localMinute)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 {sunStatus && (
-                  <span className={cn(
-                    "text-sm font-medium",
-                    sunStatus.inSun ? "text-amber-300" : "text-white/50"
-                  )}>
+                  <span
+                    className="text-sm font-medium"
+                    style={{
+                      color: sunStatus.inSun ? "#fbbf24" : "rgba(255,255,255,0.6)",
+                      textShadow: sunStatus.inSun
+                        ? "0 0 12px rgba(251,191,36,0.6), 0 0 24px rgba(255,184,0,0.3)"
+                        : "0 0 8px rgba(255,255,255,0.2)",
+                    }}
+                  >
                     {sunStatus.label}
                   </span>
                 )}
                 {openAtSlider === true && (
-                  <span className="text-xs text-green-400 font-medium">Open</span>
+                  <span className="text-xs font-medium" style={{ color: "#4ade80", textShadow: "0 0 10px rgba(74,222,128,0.5)" }}>Open</span>
                 )}
                 {openAtSlider === false && (
-                  <span className="text-xs text-red-400/70 font-medium">Closed</span>
+                  <span className="text-xs font-medium" style={{ color: "#f87171", textShadow: "0 0 10px rgba(248,113,113,0.4)" }}>Closed</span>
                 )}
               </div>
             </div>
@@ -395,7 +395,7 @@ export function PatioDetailPanel({
             </div>
 
             {/* Hour labels */}
-            <div className="flex justify-between text-xs text-white/30 px-0.5">
+            <div className="flex justify-between text-xs px-0.5" style={{ color: "rgba(255,255,255,0.5)", textShadow: "0 0 4px rgba(255,255,255,0.15)" }}>
               <span>12a</span>
               <span>6a</span>
               <span>12p</span>

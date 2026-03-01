@@ -27,10 +27,14 @@ export function TimeSlider({
   const [localMinute, setLocalMinute] = useState(minuteOfDay);
   const [isDragging, setIsDragging] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestMinuteRef = useRef(minuteOfDay);
 
   // Sync local state from parent when not dragging
   useEffect(() => {
-    if (!isDragging) setLocalMinute(minuteOfDay);
+    if (!isDragging) {
+      setLocalMinute(minuteOfDay);
+      latestMinuteRef.current = minuteOfDay;
+    }
   }, [minuteOfDay, isDragging]);
 
   const fireChange = useCallback(
@@ -46,6 +50,7 @@ export function TimeSlider({
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const v = parseInt(e.target.value);
+      latestMinuteRef.current = v;
       setLocalMinute(v);
       fireChange(v);
     },
@@ -55,10 +60,10 @@ export function TimeSlider({
   const handlePointerDown = useCallback(() => setIsDragging(true), []);
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
-    // Flush final value immediately
+    // Flush final value immediately using ref (state may be stale on tap)
     if (timerRef.current) clearTimeout(timerRef.current);
-    onMinuteChange(localMinute);
-  }, [localMinute, onMinuteChange]);
+    onMinuteChange(latestMinuteRef.current);
+  }, [onMinuteChange]);
 
   const displayMinute = isDragging ? localMinute : minuteOfDay;
   const sunrisePct = (sunriseMinute / 1440) * 100;
@@ -143,7 +148,8 @@ export function TimeSlider({
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
           onTouchEnd={handlePointerUp}
-          className="absolute inset-0 w-full h-2.5 opacity-0 cursor-pointer"
+          className="absolute w-full opacity-0 cursor-pointer"
+          style={{ top: -10, height: "calc(100% + 20px)" }}
         />
 
         {/* Thumb */}

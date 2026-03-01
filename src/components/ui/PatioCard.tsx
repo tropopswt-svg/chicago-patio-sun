@@ -113,8 +113,42 @@ export function PatioCard({ patio, isSelected, onClick, minuteOfDay, temperature
               </span>
             )}
             {temperature != null && (
-              <span className="glass-badge">
-                🌡️ {Math.round(temperature)}°F
+              <span
+                className="glass-badge font-semibold"
+                style={{
+                  background:
+                    temperature >= 85
+                      ? "rgba(239, 68, 68, 0.2)"
+                      : temperature >= 70
+                      ? "rgba(245, 158, 11, 0.2)"
+                      : temperature >= 55
+                      ? "rgba(34, 197, 94, 0.18)"
+                      : temperature >= 40
+                      ? "rgba(56, 189, 248, 0.18)"
+                      : "rgba(99, 102, 241, 0.2)",
+                  borderColor:
+                    temperature >= 85
+                      ? "rgba(239, 68, 68, 0.2)"
+                      : temperature >= 70
+                      ? "rgba(245, 158, 11, 0.2)"
+                      : temperature >= 55
+                      ? "rgba(34, 197, 94, 0.15)"
+                      : temperature >= 40
+                      ? "rgba(56, 189, 248, 0.15)"
+                      : "rgba(99, 102, 241, 0.2)",
+                  color:
+                    temperature >= 85
+                      ? "#fca5a5"
+                      : temperature >= 70
+                      ? "#fcd34d"
+                      : temperature >= 55
+                      ? "#86efac"
+                      : temperature >= 40
+                      ? "#7dd3fc"
+                      : "#a5b4fc",
+                }}
+              >
+                {Math.round(temperature)}°F
               </span>
             )}
             {busyness && (

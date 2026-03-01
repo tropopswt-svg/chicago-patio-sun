@@ -277,6 +277,14 @@ function AppContent() {
       {/* Sun direction indicator */}
       <SunIndicator date={timeState.date} mapBearing={mapBearing} />
 
+      {/* Invisible overlay to close filters when tapping on map */}
+      {filterPanelOpen && (
+        <div
+          className="absolute inset-0 z-[5]"
+          onClick={() => setFilterPanelOpen(false)}
+        />
+      )}
+
       {/* Top-left: Header + Quick Filter */}
       <div className="absolute top-3 left-3 z-10 w-44 sm:w-72">
         <Header
@@ -329,20 +337,9 @@ function AppContent() {
         </div>
       </div>
 
-      {/* Top-right: Find a Bar + nav buttons + weather */}
+      {/* Top-right: nav buttons + Find a Bar + weather */}
       <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
         <div className="flex gap-1.5 items-center">
-          <button
-            onClick={() => {
-              setSidebarOpen((v) => !v);
-              setFilterPanelOpen(false);
-            }}
-            className="glass-panel flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full text-sm font-semibold text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
-            title="Browse all patios"
-          >
-            <span className="text-base">🍺</span>
-            <span className="text-xs">{sidebarOpen ? "Close" : "Find a Bar"}</span>
-          </button>
           <button
             onClick={() => setSubmitFormOpen(true)}
             className="glass-icon-btn"
@@ -380,6 +377,19 @@ function AppContent() {
           </div>
         )}
       </div>
+
+      {/* Mid-right: Search Bars button */}
+      <button
+        onClick={() => {
+          setSidebarOpen((v) => !v);
+          setFilterPanelOpen(false);
+        }}
+        className="absolute right-3 top-1/2 -translate-y-1/2 z-10 glass-panel flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-2xl text-white/90 hover:text-white hover:bg-white/[0.12] transition-all"
+        title="Browse all patios"
+      >
+        <span className="text-2xl">🍺</span>
+        <span className="text-[10px] font-semibold leading-tight">Search</span>
+      </button>
 
       {/* "No sun today" toast */}
       {isLowSunDay && !noSunDismissed && (

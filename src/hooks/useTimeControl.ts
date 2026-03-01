@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { setHours, setMinutes, setSeconds } from "date-fns";
-import { isSunUp, getSunriseMinute, getSunsetMinute } from "@/lib/suncalc-utils";
+import { isSunUp, getSunriseMinute, getSunsetMinute, chicagoMinuteOfDay } from "@/lib/suncalc-utils";
 import { TIME_STEP_MINUTES, ANIMATION_INTERVAL_MS } from "@/lib/constants";
 import type { TimeState } from "@/lib/types";
 
 function getMinuteOfDay(date: Date): number {
-  return date.getHours() * 60 + date.getMinutes();
+  return chicagoMinuteOfDay(date);
 }
 
+/** Shift base's timestamp so its Chicago wall-clock shows the target minute */
 function dateFromMinute(base: Date, minute: number): Date {
-  const h = Math.floor(minute / 60);
-  const m = minute % 60;
-  return setSeconds(setMinutes(setHours(base, h), m), 0);
+  const current = getMinuteOfDay(base);
+  const deltaMs = (minute - current) * 60 * 1000;
+  return new Date(base.getTime() + deltaMs);
 }
 
 // Initial autoplay: hour-by-hour sweep so user sees the sun move on load

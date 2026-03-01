@@ -2,6 +2,21 @@ import SunCalc from "suncalc";
 import { CHICAGO_LAT, CHICAGO_LNG } from "./constants";
 import type { SunPosition } from "./types";
 
+const CHICAGO_TZ = "America/Chicago";
+
+/** Get minute-of-day (0–1439) in Chicago time from any Date */
+export function chicagoMinuteOfDay(date: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CHICAGO_TZ,
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(date);
+  const h = parseInt(parts.find((p) => p.type === "hour")!.value);
+  const m = parseInt(parts.find((p) => p.type === "minute")!.value);
+  return h * 60 + m;
+}
+
 export function getSunPosition(date: Date): SunPosition {
   const pos = SunCalc.getPosition(date, CHICAGO_LAT, CHICAGO_LNG);
   return {
@@ -23,12 +38,12 @@ export function isSunUp(date: Date): boolean {
 
 export function getSunriseMinute(date: Date): number {
   const times = getSunTimes(date);
-  return times.sunrise.getHours() * 60 + times.sunrise.getMinutes();
+  return chicagoMinuteOfDay(times.sunrise);
 }
 
 export function getSunsetMinute(date: Date): number {
   const times = getSunTimes(date);
-  return times.sunset.getHours() * 60 + times.sunset.getMinutes();
+  return chicagoMinuteOfDay(times.sunset);
 }
 
 export function getGoldenHourTimes(date: Date) {

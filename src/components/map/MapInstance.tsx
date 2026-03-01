@@ -238,8 +238,6 @@ export default function MapInstance({
     map.on("click", handleZoomClick);
 
     map.on("load", () => {
-      console.log("Map loaded successfully");
-
       // ── Neighborhood labels ──
       map.addSource("neighborhoods", {
         type: "geojson",
@@ -536,7 +534,6 @@ export default function MapInstance({
       sm.addTo(map);
       shadeMapRef.current = sm;
       onShadeMapReady(sm);
-      console.log("ShadeMap loaded successfully");
     } catch (err) {
       console.warn("ShadeMap failed to load:", err);
     }

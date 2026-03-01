@@ -30,10 +30,14 @@ export function loadUserSubmissions(): Patio[] {
   }
 }
 
-export function saveSubmission(submission: PatioSubmission): void {
+const MAX_SUBMISSIONS = 500;
+
+export function saveSubmission(submission: PatioSubmission): boolean {
   ensureFile();
   const raw = readFileSync(SUBMISSIONS_PATH, "utf-8");
   const submissions: PatioSubmission[] = JSON.parse(raw);
+  if (submissions.length >= MAX_SUBMISSIONS) return false;
   submissions.push(submission);
   writeFileSync(SUBMISSIONS_PATH, JSON.stringify(submissions, null, 2));
+  return true;
 }

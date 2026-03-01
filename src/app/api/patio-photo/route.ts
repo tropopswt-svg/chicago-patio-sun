@@ -6,7 +6,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY ?? "";
 const cache = new Map<
   string,
   {
-    photoUrl: string | null;
+    photoDataUri: string | null;
     hours: string | null;
     isOpen: boolean | null;
     timestamp: number;
@@ -48,6 +48,23 @@ function formatHoursForToday(
   return { hours: `${openTime} \u2013 ${closeTime}`, isOpen };
 }
 
+async function fetchPhotoAsDataUri(photoRef: string): Promise<string | null> {
+  try {
+    const url = `https://places.googleapis.com/v1/${photoRef}/media?maxWidthPx=96&key=${GOOGLE_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("Google photo fetch error:", res.status);
+      return null;
+    }
+    const buffer = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") || "image/jpeg";
+    const base64 = Buffer.from(buffer).toString("base64");
+    return `data:${contentType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const name = searchParams.get("name");
@@ -70,7 +87,7 @@ export async function GET(request: NextRequest) {
   const cached = cache.get(patioId);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return NextResponse.json({
-      photoUrl: cached.photoUrl,
+      photoUrl: cached.photoDataUri,
       hours: cached.hours,
       isOpen: cached.isOpen,
     });
@@ -108,8 +125,8 @@ export async function GET(request: NextRequest) {
     );
 
     if (!res.ok) {
-      console.error("Google Places API error:", res.status, await res.text());
-      const result = { photoUrl: null, hours: null, isOpen: null, timestamp: Date.now() };
+      console.error("Google Places API error:", res.status);
+      const result = { photoDataUri: null, hours: null, isOpen: null, timestamp: Date.now() };
       cache.set(patioId, result);
       return NextResponse.json({ photoUrl: null, hours: null, isOpen: null });
     }
@@ -119,15 +136,14 @@ export async function GET(request: NextRequest) {
     const photoRef = place?.photos?.[0]?.name;
     const { hours, isOpen } = formatHoursForToday(place?.currentOpeningHours);
 
-    const photoUrl = photoRef
-      ? `https://places.googleapis.com/v1/${photoRef}/media?maxWidthPx=96&key=${GOOGLE_API_KEY}`
-      : null;
+    // Fetch photo bytes server-side and convert to base64 data URI
+    const photoDataUri = photoRef ? await fetchPhotoAsDataUri(photoRef) : null;
 
-    cache.set(patioId, { photoUrl, hours, isOpen, timestamp: Date.now() });
-    return NextResponse.json({ photoUrl, hours, isOpen });
+    cache.set(patioId, { photoDataUri, hours, isOpen, timestamp: Date.now() });
+    return NextResponse.json({ photoUrl: photoDataUri, hours, isOpen });
   } catch (err) {
     console.error("Failed to fetch patio photo:", err);
-    const result = { photoUrl: null, hours: null, isOpen: null, timestamp: Date.now() };
+    const result = { photoDataUri: null, hours: null, isOpen: null, timestamp: Date.now() };
     cache.set(patioId, result);
     return NextResponse.json({ photoUrl: null, hours: null, isOpen: null });
   }

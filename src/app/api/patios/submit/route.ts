@@ -11,10 +11,15 @@ const CHI_LNG_MAX = -87.52;
 
 const VALID_TYPES = ["bar", "restaurant", "pub", "rooftop"] as const;
 
+function stripHtml(str: string): string {
+  return str.replace(/<[^>]*>/g, "");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, address, lat, lng, type } = body;
+    let { name, address } = body;
+    const { lat, lng, type } = body;
 
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       return NextResponse.json({ error: "Name is required (min 2 chars)" }, { status: 400 });
@@ -22,6 +27,14 @@ export async function POST(request: NextRequest) {
 
     if (!address || typeof address !== "string") {
       return NextResponse.json({ error: "Address is required" }, { status: 400 });
+    }
+
+    // Sanitize inputs
+    name = stripHtml(name).slice(0, 100);
+    address = stripHtml(address).slice(0, 200);
+
+    if (name.trim().length < 2) {
+      return NextResponse.json({ error: "Name is required (min 2 chars)" }, { status: 400 });
     }
 
     if (!type || !VALID_TYPES.includes(type)) {
@@ -78,7 +91,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    saveSubmission({
+    const saved = saveSubmission({
       name: name.trim(),
       address: address.trim(),
       lat: finalLat,
@@ -86,6 +99,13 @@ export async function POST(request: NextRequest) {
       type,
       submittedAt: new Date().toISOString(),
     });
+
+    if (!saved) {
+      return NextResponse.json(
+        { error: "Submissions limit reached" },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json({ success: true, lat: finalLat, lng: finalLng });
   } catch {

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!res.ok) {
-      console.error("BestTime API error:", res.status, await res.text());
+      console.error("BestTime API error:", res.status);
       cache.set(patioId, { forecast: null, timestamp: Date.now() });
       return NextResponse.json({ forecast: null });
     }

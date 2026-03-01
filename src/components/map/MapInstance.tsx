@@ -150,6 +150,7 @@ export default function MapInstance({
   const onOpenDetailRef = useRef(onOpenDetail);
   onOpenDetailRef.current = onOpenDetail;
   const lastDataKeyRef = useRef("");
+  const lastLightMinuteRef = useRef(-1);
 
   const updatePatioLayers = useCallback(() => {
     const map = mapRef.current;
@@ -464,7 +465,12 @@ export default function MapInstance({
   }, [updatePatioLayers]);
 
   // Update sun lighting, dot colors, and ShadeMap when time changes
+  // Dedup at minute level so rapid slider drags don't trigger redundant GPU work
+  const currentMinute = date.getHours() * 60 + date.getMinutes();
   useEffect(() => {
+    if (currentMinute === lastLightMinuteRef.current) return;
+    lastLightMinuteRef.current = currentMinute;
+
     const map = mapRef.current;
     if (!map) return;
 
@@ -501,7 +507,7 @@ export default function MapInstance({
 
     const sm = shadeMapRef.current as { setDate?: (d: Date) => void } | null;
     if (sm?.setDate) sm.setDate(date);
-  }, [date]);
+  }, [currentMinute, date]);
 
   async function loadShadeMap(map: mapboxgl.Map) {
     try {

@@ -4,17 +4,21 @@ import type { SunPosition } from "./types";
 
 const CHICAGO_TZ = "America/Chicago";
 
+// Cache the formatter — creating it is expensive, calling formatToParts is cheap
+const chicagoTimeFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CHICAGO_TZ,
+  hour: "numeric",
+  minute: "numeric",
+  hour12: false,
+});
+
 /** Get minute-of-day (0–1439) in Chicago time from any Date */
 export function chicagoMinuteOfDay(date: Date): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: CHICAGO_TZ,
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  }).formatToParts(date);
+  const parts = chicagoTimeFmt.formatToParts(date);
   const h = parseInt(parts.find((p) => p.type === "hour")!.value);
   const m = parseInt(parts.find((p) => p.type === "minute")!.value);
-  return h * 60 + m;
+  // hour12:false returns "24" for midnight in some browsers
+  return (h === 24 ? 0 : h) * 60 + m;
 }
 
 export function getSunPosition(date: Date): SunPosition {

@@ -242,6 +242,20 @@ export default function MapInstance({
     map.on("click", handleZoomClick);
 
     map.on("load", () => {
+      // ── Hide street labels until zoomed in ──
+      const style = map.getStyle();
+      for (const layer of style.layers || []) {
+        if (layer.type === "symbol") {
+          if (layer.id.match(/road-label|street-label|road-number/)) {
+            map.setLayerZoomRange(layer.id, 15, 24);
+          } else if (
+            layer.id.match(/poi-label|transit-label|airport-label|natural-point-label|waterway-label/)
+          ) {
+            map.setLayoutProperty(layer.id, "visibility", "none");
+          }
+        }
+      }
+
       // ── Neighborhood labels ──
       map.addSource("neighborhoods", {
         type: "geojson",
@@ -518,22 +532,18 @@ export default function MapInstance({
       );
     }
 
-    // Toggle ShadeMap layers: hide at night, show during day
-    const smLayerIds = shadeMapLayerIdsRef.current;
-    for (const id of smLayerIds) {
+    // Hide ShadeMap layers at night, show during day
+    for (const id of shadeMapLayerIdsRef.current) {
       if (map.getLayer(id)) {
         map.setLayoutProperty(id, "visibility", night ? "none" : "visible");
       }
     }
-
-    // Update ShadeMap date only during daytime
     if (!night) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sm = shadeMapRef.current as any;
       if (sm?.setDate) sm.setDate(date);
     }
-
-    // Always keep patio layers above everything
+    // Always keep patio layers on top
     if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
     if (map.getLayer("patios-base")) map.moveLayer("patios-base");
     if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
@@ -574,23 +584,20 @@ export default function MapInstance({
 
       shadeMapRef.current = sm;
 
-      // Capture layers before/after to identify ShadeMap's layers
+      // Always add ShadeMap, but detect its layers so we can hide them at night
       const layersBefore = new Set((map.getStyle()?.layers || []).map((l) => l.id));
       sm.addTo(map);
       const layersAfter = (map.getStyle()?.layers || []).map((l) => l.id);
-      const smLayerIds = layersAfter.filter((id) => !layersBefore.has(id));
-      shadeMapLayerIdsRef.current = smLayerIds;
+      shadeMapLayerIdsRef.current = layersAfter.filter((id) => !layersBefore.has(id));
 
-      // If night, immediately hide ShadeMap layers
+      // If night right now, immediately hide ShadeMap layers
       if (!isSunUp(date)) {
-        for (const id of smLayerIds) {
-          if (map.getLayer(id)) {
-            map.setLayoutProperty(id, "visibility", "none");
-          }
+        for (const id of shadeMapLayerIdsRef.current) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
         }
       }
 
-      // Ensure patio dots and labels render ABOVE the shadow overlay
+      // Keep patio layers above ShadeMap
       if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
       if (map.getLayer("patios-base")) map.moveLayer("patios-base");
       if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Moon } from "lucide-react";
 import { formatMinuteOfDay } from "@/lib/suncalc-utils";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,8 @@ interface TimeSliderProps {
   onTogglePlay: () => void;
 }
 
+const DEBOUNCE_MS = 200;
+
 export function TimeSlider({
   timeState,
   sunriseMinute,
@@ -21,9 +24,46 @@ export function TimeSlider({
   onTogglePlay,
 }: TimeSliderProps) {
   const { minuteOfDay, isPlaying, isNight } = timeState;
+  const [localMinute, setLocalMinute] = useState(minuteOfDay);
+  const [isDragging, setIsDragging] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local state from parent when not dragging
+  useEffect(() => {
+    if (!isDragging) setLocalMinute(minuteOfDay);
+  }, [minuteOfDay, isDragging]);
+
+  const fireChange = useCallback(
+    (minute: number) => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        onMinuteChange(minute);
+      }, DEBOUNCE_MS);
+    },
+    [onMinuteChange]
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = parseInt(e.target.value);
+      setLocalMinute(v);
+      fireChange(v);
+    },
+    [fireChange]
+  );
+
+  const handlePointerDown = useCallback(() => setIsDragging(true), []);
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false);
+    // Flush final value immediately
+    if (timerRef.current) clearTimeout(timerRef.current);
+    onMinuteChange(localMinute);
+  }, [localMinute, onMinuteChange]);
+
+  const displayMinute = isDragging ? localMinute : minuteOfDay;
   const sunrisePct = (sunriseMinute / 1440) * 100;
   const sunsetPct = (sunsetMinute / 1440) * 100;
-  const currentPct = (minuteOfDay / 1440) * 100;
+  const currentPct = (displayMinute / 1440) * 100;
 
   return (
     <div className="relative space-y-1.5">
@@ -33,7 +73,6 @@ export function TimeSlider({
         style={{
           left: `${currentPct}%`,
           bottom: 40,
-          transition: "left 0.05s linear",
         }}
       >
         <span
@@ -44,7 +83,7 @@ export function TimeSlider({
               "0 2px 16px rgba(0,0,0,0.7), 0 0 4px rgba(0,0,0,0.4)",
           }}
         >
-          {formatMinuteOfDay(minuteOfDay)}
+          {formatMinuteOfDay(displayMinute)}
         </span>
       </div>
 
@@ -67,7 +106,7 @@ export function TimeSlider({
             textShadow: "0 1px 4px rgba(0,0,0,0.5)",
           }}
         >
-          {formatMinuteOfDay(minuteOfDay)}
+          {formatMinuteOfDay(displayMinute)}
         </span>
         {isNight && <Moon className="w-3 h-3 text-blue-300/50" />}
       </div>
@@ -99,14 +138,17 @@ export function TimeSlider({
           type="range"
           min={0}
           max={1439}
-          value={minuteOfDay}
-          onChange={(e) => onMinuteChange(parseInt(e.target.value))}
+          value={displayMinute}
+          onChange={handleChange}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onTouchEnd={handlePointerUp}
           className="absolute inset-0 w-full h-2.5 opacity-0 cursor-pointer"
         />
 
         {/* Thumb */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full pointer-events-none transition-[left] duration-75"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full pointer-events-none"
           style={{
             left: `calc(${currentPct}% - 8px)`,
             background:

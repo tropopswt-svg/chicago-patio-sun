@@ -36,24 +36,11 @@ export function useTimeControl() {
   const sunsetMinute = getSunsetMinute(date);
 
   // User drags slider → stop playing, end autoplay mode
-  // Throttled via rAF so at most 1 state update per frame during fast drags
-  const rafRef = useRef<number | null>(null);
-  const pendingMinuteRef = useRef<number | null>(null);
-
   const setMinuteOfDay = useCallback(
     (minute: number) => {
       setIsPlaying(false);
       setIsAutoplay(false);
-      pendingMinuteRef.current = Math.min(Math.max(minute, 0), 1439);
-      if (rafRef.current === null) {
-        rafRef.current = requestAnimationFrame(() => {
-          rafRef.current = null;
-          const m = pendingMinuteRef.current;
-          if (m !== null) {
-            setDate((prev) => dateFromMinute(prev, m));
-          }
-        });
-      }
+      setDate((prev) => dateFromMinute(prev, Math.min(Math.max(minute, 0), 1439)));
     },
     []
   );

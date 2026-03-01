@@ -129,6 +129,6 @@ export function isOpenAt(openingHours: string | undefined, date: Date): boolean 
   // If we parsed at least one rule but none matched → closed
   if (matched) return false;
 
-  // Couldn't parse anything useful
-  return null;
+  // No hours data — assume open (most Chicago bars/restaurants are open until 2 AM)
+  return true;
 }

@@ -6,9 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "remotion:studio": "remotion studio src/remotion/index.ts",
+    "remotion:render": "remotion render src/remotion/index.ts InstagramAd out/instagram-ad.mp4"
   },
   "dependencies": {
+    "@remotion/bundler": "^4.0.429",
+    "@remotion/cli": "^4.0.429",
+    "@remotion/renderer": "^4.0.429",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "flatbush": "^4.5.0",
@@ -18,6 +23,7 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "remotion": "^4.0.429",
     "suncalc": "^1.9.0",
     "swr": "^2.4.1",
     "tailwind-merge": "^3.5.0"

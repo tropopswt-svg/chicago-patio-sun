@@ -262,7 +262,7 @@ function AppContent() {
   );
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden" onPointerDown={stopPlay}>
+    <div className="relative w-full h-dvh overflow-hidden" onPointerDown={stopPlay}>
       {/* Map */}
       <MapInstance
         onMapReady={handleMapReady}
@@ -317,7 +317,7 @@ function AppContent() {
                 setFilterPanelOpen(false);
               }}
               title={t.label}
-              className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
                 quickFilter.setting === t.value
                   ? "bg-white/[0.18] text-white shadow-[inset_0_0_10px_rgba(245,158,11,0.12)]"
                   : "text-white/50 hover:text-white/75 hover:bg-white/[0.08]"
@@ -370,7 +370,7 @@ function AppContent() {
         )}
         {weatherDisplay && (
           <div className="pointer-events-none select-none">
-            <div className="flex items-center gap-1.5 text-[11px] sm:text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.5), 0 0 3px rgba(0,0,0,0.25)" }}>
               <span className="text-sm sm:text-lg">{weatherDisplay.icon}</span>
               <span className="text-white/50 font-medium">{weatherDisplay.temperature}°F</span>
               <span className="text-white/30 hidden sm:inline">{weatherDisplay.label}</span>
@@ -398,7 +398,7 @@ function AppContent() {
             <span className="text-white/70 font-medium">Limited sun expected today</span>
             <button
               onClick={() => setNoSunDismissed(true)}
-              className="ml-1 text-white/30 hover:text-white/60 transition-colors text-xs"
+              className="ml-1 w-8 h-8 flex items-center justify-center text-white/30 hover:text-white/60 transition-colors text-sm"
             >
               ✕
             </button>
@@ -408,7 +408,7 @@ function AppContent() {
 
       {/* Bottom center: Horizontal Time Slider — hidden when filters or sidebar open */}
       {!filterPanelOpen && !sidebarOpen && (
-        <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[60vw] sm:w-[400px] z-10">
+        <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[80vw] sm:w-[400px] z-10">
           <TimeSlider
             timeState={timeState}
             sunriseMinute={sunriseMinute}
@@ -460,9 +460,9 @@ function AppContent() {
           <div className="glass-panel relative rounded-[24px] p-6 max-w-sm w-full animate-slide-up">
             <button
               onClick={() => setAboutOpen(false)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-all"
+              className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.08] transition-all"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
@@ -470,7 +470,7 @@ function AppContent() {
               </div>
               <div>
                 <h2 className="text-base font-bold text-white/95">Chicago Booze Map</h2>
-                <p className="text-[11px] text-white/40">Patio Sunlight Tracker</p>
+                <p className="text-xs text-white/40">Patio Sunlight Tracker</p>
               </div>
             </div>
             <div className="space-y-3 text-sm text-white/70 leading-relaxed">

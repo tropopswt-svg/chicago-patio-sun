@@ -27,7 +27,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const flyTo = useCallback((lng: number, lat: number) => {
     mapRef.current?.flyTo({
       center: [lng, lat],
-      zoom: 17,
+      zoom: 16,
       pitch: 60,
       duration: 1500,
     });

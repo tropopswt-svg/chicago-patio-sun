@@ -46,6 +46,45 @@ export function PatioDetailPanel({
   const [localMinute, setLocalMinute] = useState(minuteOfDay);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Panel drag-to-resize state
+  const [snapPoint, setSnapPoint] = useState<'full' | 'mid' | 'min'>('full');
+  const panelDragStartY = useRef(0);
+  const [panelDragDelta, setPanelDragDelta] = useState(0);
+  const [isPanelDragging, setIsPanelDragging] = useState(false);
+
+  const SNAP_VH = { full: 75, mid: 40, min: 18 };
+  const currentSnapVh = SNAP_VH[snapPoint];
+  const effectiveVh = isPanelDragging
+    ? Math.max(15, Math.min(80, currentSnapVh - (panelDragDelta / (typeof window !== 'undefined' ? window.innerHeight : 800)) * 100))
+    : currentSnapVh;
+
+  // Reset to full height when a new patio opens
+  useEffect(() => {
+    if (patio) setSnapPoint('full');
+  }, [patio]);
+
+  const onHandlePointerDown = useCallback((e: React.PointerEvent) => {
+    setIsPanelDragging(true);
+    panelDragStartY.current = e.clientY;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const onHandlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isPanelDragging) return;
+    setPanelDragDelta(e.clientY - panelDragStartY.current);
+  }, [isPanelDragging]);
+
+  const onHandlePointerUp = useCallback(() => {
+    if (!isPanelDragging) return;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const h = Math.max(15, Math.min(80, currentSnapVh - (panelDragDelta / vh) * 100));
+    if (h > 55) setSnapPoint('full');
+    else if (h > 27) setSnapPoint('mid');
+    else setSnapPoint('min');
+    setPanelDragDelta(0);
+    setIsPanelDragging(false);
+  }, [isPanelDragging, currentSnapVh, panelDragDelta]);
+
   const { photoUrl, hours, isOpen } = usePatioPhoto(patio, !!patio);
   const { forecast } = usePatioBusyness(patio, !!patio);
 
@@ -158,12 +197,18 @@ export function PatioDetailPanel({
   const sliderPct = (localMinute / 1439) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-2 sm:px-4 sm:py-4">
       <div className="absolute inset-0 bg-black/15" onClick={onClose} />
 
       <div
-        className="relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up sm:animate-none"
+        className={cn(
+          "relative w-full sm:max-w-md rounded-t-[24px] sm:rounded-[24px] overflow-hidden max-h-[75vh] sm:max-h-[90vh] animate-slide-up sm:animate-none",
+          snapPoint === 'full' ? "overflow-y-auto" : "overflow-hidden"
+        )}
         style={{
+          ...(snapPoint !== 'full' || isPanelDragging
+            ? { maxHeight: `${effectiveVh}vh`, transition: isPanelDragging ? 'none' : 'max-height 0.3s ease-out' }
+            : {}),
           background: "linear-gradient(160deg, rgba(15, 15, 35, 0.35) 0%, rgba(15, 15, 35, 0.25) 50%, rgba(255, 255, 255, 0.04) 100%)",
           backdropFilter: "blur(40px) saturate(200%)",
           WebkitBackdropFilter: "blur(40px) saturate(200%)",
@@ -171,9 +216,14 @@ export function PatioDetailPanel({
           boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
         }}
       >
-        {/* Drag handle (mobile) */}
-        <div className="sm:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+        {/* Drag handle (mobile) — drag to resize */}
+        <div
+          className="sm:hidden flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing touch-none"
+          onPointerDown={onHandlePointerDown}
+          onPointerMove={onHandlePointerMove}
+          onPointerUp={onHandlePointerUp}
+        >
+          <div className="w-10 h-1.5 rounded-full bg-white/30" />
         </div>
 
         <button

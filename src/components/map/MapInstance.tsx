@@ -36,6 +36,7 @@ interface MapInstanceProps {
   onPatioClick: (id: string) => void;
   onOpenDetail: (id: string) => void;
   date: Date;
+  lockedCenter?: [number, number] | null;
 }
 
 let useLightsAPI = true; // try v3 setLights first, fall back to setLight
@@ -141,6 +142,7 @@ export default function MapInstance({
   onPatioClick,
   onOpenDetail,
   date,
+  lockedCenter,
 }: MapInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -561,6 +563,23 @@ export default function MapInstance({
     }
   }, [selectedPatioId]);
 
+  // Orbit lock: when lockedCenter is set, pin the map center so user can only rotate/pitch
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!lockedCenter) return;
+
+    const [lng, lat] = lockedCenter;
+    const handler = () => {
+      const c = map.getCenter();
+      if (Math.abs(c.lng - lng) > 0.0001 || Math.abs(c.lat - lat) > 0.0001) {
+        map.setCenter([lng, lat]);
+      }
+    };
+    map.on("move", handler);
+    return () => { map.off("move", handler); };
+  }, [lockedCenter]);
+
   // Update patio layer data
   useEffect(() => {
     updatePatioLayers();
@@ -620,13 +639,26 @@ export default function MapInstance({
 
     // Day→Night: fully destroy ShadeMap (custom WebGL layers ignore visibility controls)
     if (night && wasNightRef.current === false) {
-      // Remove custom layers from Mapbox first (stops render loop calls)
-      for (const id of shadeMapLayerIdsRef.current) {
-        try { if (map.getLayer(id)) map.removeLayer(id); } catch { /* noop */ }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sm = shadeMapRef.current as any;
+      if (sm) {
+        try { sm.remove(); } catch { /* noop */ }
+        shadeMapRef.current = null;
+      }
+      // Belt-and-suspenders: find and remove any ShadeMap layers by known prefixes
+      // (sm.addTo adds layers async, so our before/after ID detection may have missed them)
+      for (const layer of (map.getStyle()?.layers || [])) {
+        if (/^(shademap-layer|canvas-layer|attribution-layer)/.test(layer.id)) {
+          try { map.removeLayer(layer.id); } catch { /* noop */ }
+        }
+      }
+      // Also remove ShadeMap sources
+      for (const srcId of Object.keys(map.getStyle()?.sources || {})) {
+        if (/^(canvas-source|attribution-source)/.test(srcId)) {
+          try { map.removeSource(srcId); } catch { /* noop */ }
+        }
       }
       shadeMapLayerIdsRef.current = [];
-      // Null out ref — do NOT call sm.remove() as it double-frees WebGL textures
-      shadeMapRef.current = null;
     }
 
     // Night→Day: recreate ShadeMap from cached class

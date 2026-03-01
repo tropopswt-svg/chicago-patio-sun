@@ -229,11 +229,10 @@ function AppContent() {
       setSelectedPatioId(patio.id);
       setDetailPatio(patio);
       setSidebarOpen(false);
-      // Offset center south so dot appears above the detail panel
       mapRef.current?.flyTo({
-        center: [patio.lng, patio.lat - 0.002],
-        zoom: 15.5,
-        pitch: DEFAULT_PITCH,
+        center: [patio.lng, patio.lat],
+        zoom: 17,
+        pitch: 65,
         bearing: DEFAULT_BEARING,
         duration: 1200,
       });
@@ -247,9 +246,11 @@ function AppContent() {
       if (patio) {
         setDetailPatio(patio);
         setSelectedPatioId(id);
-        // Nudge map so dot appears above the detail panel
         mapRef.current?.flyTo({
-          center: [patio.lng, patio.lat - 0.002],
+          center: [patio.lng, patio.lat],
+          zoom: 17,
+          pitch: 65,
+          bearing: DEFAULT_BEARING,
           duration: 800,
         });
       }
@@ -288,6 +289,7 @@ function AppContent() {
         onPatioClick={handlePatioClick}
         onOpenDetail={handleOpenDetail}
         date={timeState.date}
+        lockedCenter={detailPatio ? [detailPatio.lng, detailPatio.lat] : null}
       />
 
       {/* Sun direction indicator */}

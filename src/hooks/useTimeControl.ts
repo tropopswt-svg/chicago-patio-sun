@@ -1,19 +1,28 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { setHours, setMinutes, setSeconds } from "date-fns";
 import { isSunUp, getSunriseMinute, getSunsetMinute, chicagoMinuteOfDay } from "@/lib/suncalc-utils";
 import { TIME_STEP_MINUTES, ANIMATION_INTERVAL_MS } from "@/lib/constants";
 import type { TimeState } from "@/lib/types";
 
+// Compute Chicago-vs-local offset once (only shifts at DST, fine for a session)
+const CHICAGO_OFFSET_MIN = (() => {
+  const now = new Date();
+  const localMin = now.getHours() * 60 + now.getMinutes();
+  const chicagoMin = chicagoMinuteOfDay(now);
+  return chicagoMin - localMin;
+})();
+
 function getMinuteOfDay(date: Date): number {
-  return chicagoMinuteOfDay(date);
+  return ((date.getHours() * 60 + date.getMinutes() + CHICAGO_OFFSET_MIN) % 1440 + 1440) % 1440;
 }
 
-/** Shift base's timestamp so its Chicago wall-clock shows the target minute */
 function dateFromMinute(base: Date, minute: number): Date {
-  const current = getMinuteOfDay(base);
-  const deltaMs = (minute - current) * 60 * 1000;
-  return new Date(base.getTime() + deltaMs);
+  const localMinute = ((minute - CHICAGO_OFFSET_MIN) % 1440 + 1440) % 1440;
+  const h = Math.floor(localMinute / 60);
+  const m = localMinute % 60;
+  return setSeconds(setMinutes(setHours(base, h), m), 0);
 }
 
 // Initial autoplay: hour-by-hour sweep so user sees the sun move on load

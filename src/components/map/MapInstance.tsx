@@ -496,6 +496,59 @@ export default function MapInstance({
     }
   }, [selectedPatioId]);
 
+  // Dim the map and non-selected dots when a patio is selected (detail open)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    // Add or update a dark overlay layer to shade the whole map
+    if (!map.getSource("dim-overlay-src")) {
+      map.addSource("dim-overlay-src", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]] },
+          properties: {},
+        },
+      });
+      map.addLayer({
+        id: "dim-overlay",
+        type: "fill",
+        source: "dim-overlay-src",
+        paint: {
+          "fill-color": "#000000",
+          "fill-opacity": 0,
+        },
+      });
+    }
+
+    if (selectedPatioId) {
+      // Darken the map
+      map.setPaintProperty("dim-overlay", "fill-opacity", 0.4);
+      // Dim non-selected patio dots
+      if (map.getLayer("patios-base")) {
+        map.setPaintProperty("patios-base", "circle-opacity", [
+          "case", ["==", ["get", "selected"], true], 1.0, 0.2,
+        ]);
+        map.setPaintProperty("patios-base", "circle-stroke-opacity", [
+          "case", ["==", ["get", "selected"], true], 1.0, 0.2,
+        ]);
+      }
+      if (map.getLayer("patios-sun-glow")) {
+        map.setPaintProperty("patios-sun-glow", "circle-opacity", 0.05);
+      }
+    } else {
+      // Restore
+      map.setPaintProperty("dim-overlay", "fill-opacity", 0);
+      if (map.getLayer("patios-base")) {
+        map.setPaintProperty("patios-base", "circle-stroke-opacity", 1.0);
+      }
+      if (map.getLayer("patios-sun-glow")) {
+        map.setPaintProperty("patios-sun-glow", "circle-opacity", 0.2);
+      }
+    }
+  }, [selectedPatioId]);
+
   // Update patio layer data
   useEffect(() => {
     updatePatioLayers();
@@ -555,23 +608,19 @@ export default function MapInstance({
 
     // Day→Night: fully destroy ShadeMap (custom WebGL layers ignore visibility controls)
     if (night && wasNightRef.current === false) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sm = shadeMapRef.current as any;
-      if (sm) {
-        try { sm.remove(); } catch { /* noop */ }
-        shadeMapRef.current = null;
-      }
-      // Belt-and-suspenders: remove any leftover custom WebGL layers
+      // Remove custom layers from Mapbox first (stops render loop calls)
       for (const id of shadeMapLayerIdsRef.current) {
         try { if (map.getLayer(id)) map.removeLayer(id); } catch { /* noop */ }
       }
       shadeMapLayerIdsRef.current = [];
+      // Null out ref — do NOT call sm.remove() as it double-frees WebGL textures
+      shadeMapRef.current = null;
     }
 
     // Night→Day: recreate ShadeMap from cached class
     if (!night && wasNightRef.current === true && shadeMapClassRef.current && !shadeMapCreatingRef.current) {
       shadeMapCreatingRef.current = true;
-      createShadeMapInstance(map, date);
+      try { createShadeMapInstance(map, date); } catch { /* noop */ }
       shadeMapCreatingRef.current = false;
     }
 
@@ -579,12 +628,15 @@ export default function MapInstance({
     if (!night) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sm = shadeMapRef.current as any;
-      if (sm?.setDate) sm.setDate(date);
+      if (sm?.setDate) {
+        try { sm.setDate(date); } catch { /* noop */ }
+      }
     }
 
     wasNightRef.current = night;
 
     // Always keep patio layers on top
+    if (map.getLayer("dim-overlay")) map.moveLayer("dim-overlay");
     if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
     if (map.getLayer("patios-base")) map.moveLayer("patios-base");
     if (map.getLayer("patios-selected-glow")) map.moveLayer("patios-selected-glow");
@@ -594,6 +646,7 @@ export default function MapInstance({
 
   // Create a fresh ShadeMap instance and add it to the map (synchronous addTo)
   function createShadeMapInstance(map: mapboxgl.Map, d: Date) {
+    try {
     const apiKey = process.env.NEXT_PUBLIC_SHADEMAP_KEY;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SMClass = shadeMapClassRef.current as any;
@@ -631,6 +684,7 @@ export default function MapInstance({
     shadeMapLayerIdsRef.current = layersAfter.filter((id) => !layersBefore.has(id));
 
     // Keep patio layers above ShadeMap
+    if (map.getLayer("dim-overlay")) map.moveLayer("dim-overlay");
     if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
     if (map.getLayer("patios-base")) map.moveLayer("patios-base");
     if (map.getLayer("patios-selected-glow")) map.moveLayer("patios-selected-glow");

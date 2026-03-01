@@ -235,8 +235,8 @@ export function PatioDetailPanel({
           <div>
             <div className="flex items-center gap-2">
               <h2
-                className="text-lg font-semibold tracking-tight"
-                style={{ color: "#fff", textShadow: "0 0 12px rgba(255,255,255,0.5), 0 0 30px rgba(255,184,0,0.3)" }}
+                className="text-xl font-bold tracking-tight"
+                style={{ color: "#fff", textShadow: "0 0 16px rgba(255,255,255,0.7), 0 0 40px rgba(255,184,0,0.5), 0 2px 4px rgba(0,0,0,0.8)" }}
               >{patio.name}</h2>
               {user && (
                 <button
@@ -256,7 +256,7 @@ export function PatioDetailPanel({
             {patio.address && (
               <p
                 className="text-xs flex items-center gap-1.5 mt-0.5"
-                style={{ color: "rgba(255,255,255,0.75)", textShadow: "0 0 8px rgba(255,255,255,0.3)" }}
+                style={{ color: "rgba(255,255,255,0.9)", textShadow: "0 0 10px rgba(255,255,255,0.5), 0 1px 3px rgba(0,0,0,0.7)" }}
               >
                 <MapPin className="w-3 h-3 shrink-0" />
                 {patio.address}
@@ -282,7 +282,7 @@ export function PatioDetailPanel({
           {/* Date header */}
           <div
             className="text-xs font-medium uppercase tracking-wider"
-            style={{ color: "rgba(255,255,255,0.6)", textShadow: "0 0 6px rgba(255,255,255,0.2)" }}
+            style={{ color: "rgba(255,255,255,0.8)", textShadow: "0 0 8px rgba(255,255,255,0.4), 0 1px 3px rgba(0,0,0,0.6)" }}
           >
             {today}
           </div>
@@ -306,7 +306,7 @@ export function PatioDetailPanel({
                 )}
                 <span
                   className="text-xl font-semibold tabular-nums"
-                  style={{ color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.5), 0 0 24px rgba(255,184,0,0.25)" }}
+                  style={{ color: "#fff", textShadow: "0 0 14px rgba(255,255,255,0.7), 0 0 30px rgba(255,184,0,0.4), 0 2px 4px rgba(0,0,0,0.8)" }}
                 >
                   {formatTime(localMinute)}
                 </span>
@@ -318,18 +318,18 @@ export function PatioDetailPanel({
                     style={{
                       color: sunStatus.inSun ? "#fbbf24" : "rgba(255,255,255,0.6)",
                       textShadow: sunStatus.inSun
-                        ? "0 0 12px rgba(251,191,36,0.6), 0 0 24px rgba(255,184,0,0.3)"
-                        : "0 0 8px rgba(255,255,255,0.2)",
+                        ? "0 0 16px rgba(251,191,36,0.8), 0 0 32px rgba(255,184,0,0.5), 0 2px 4px rgba(0,0,0,0.7)"
+                        : "0 0 12px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.7)",
                     }}
                   >
                     {sunStatus.label}
                   </span>
                 )}
                 {openAtSlider === true && (
-                  <span className="text-xs font-medium" style={{ color: "#4ade80", textShadow: "0 0 10px rgba(74,222,128,0.5)" }}>Open</span>
+                  <span className="text-sm font-semibold" style={{ color: "#4ade80", textShadow: "0 0 12px rgba(74,222,128,0.7), 0 0 24px rgba(74,222,128,0.3)" }}>Open</span>
                 )}
                 {openAtSlider === false && (
-                  <span className="text-xs font-medium" style={{ color: "#f87171", textShadow: "0 0 10px rgba(248,113,113,0.4)" }}>Closed</span>
+                  <span className="text-sm font-semibold" style={{ color: "#f87171", textShadow: "0 0 12px rgba(248,113,113,0.6), 0 0 24px rgba(248,113,113,0.3)" }}>Closed</span>
                 )}
               </div>
             </div>
@@ -407,13 +407,18 @@ export function PatioDetailPanel({
           {/* Busyness text */}
           {busyness && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-white/40">Busyness:</span>
-              <span className={cn(
-                "text-xs font-medium",
-                busyness.label === "Busy" ? "text-red-300/80"
-                  : busyness.label === "Moderate" ? "text-yellow-300/80"
-                  : "text-green-300/80"
-              )}>
+              <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.7)", textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Busyness:</span>
+              <span
+                className="text-xs font-semibold"
+                style={{
+                  color: busyness.label === "Busy" ? "#f87171" : busyness.label === "Moderate" ? "#fbbf24" : "#4ade80",
+                  textShadow: busyness.label === "Busy"
+                    ? "0 0 10px rgba(248,113,113,0.6)"
+                    : busyness.label === "Moderate"
+                    ? "0 0 10px rgba(251,191,36,0.5)"
+                    : "0 0 10px rgba(74,222,128,0.5)",
+                }}
+              >
                 {busyness.label}
               </span>
             </div>

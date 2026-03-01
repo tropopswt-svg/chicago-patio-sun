@@ -155,6 +155,7 @@ export default function MapInstance({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const shadeMapRef = useRef<unknown>(null);
+  const shadeMapActiveRef = useRef(false);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const hasZoomedIn = useRef(false);
   const clickCount = useRef(0);
@@ -163,6 +164,7 @@ export default function MapInstance({
   const lastDataKeyRef = useRef("");
   const lastLightMinuteRef = useRef(-1);
   const rooftopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rooftopMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   const updatePatioLayers = useCallback(() => {
     const map = mapRef.current;
@@ -406,117 +408,68 @@ export default function MapInstance({
       map.moveLayer("neighborhood-labels");
 
       // ── Rooftop photo overlay (860 N DeWitt Place) ──
-      map.addSource("rooftop-overlay-a", {
-        type: "image",
-        url: DEWITT_ROOFTOP_PHOTOS[0],
-        coordinates: DEWITT_ROOFTOP_COORDS,
-      });
-      map.addSource("rooftop-overlay-b", {
-        type: "image",
-        url: DEWITT_ROOFTOP_PHOTOS[1],
-        coordinates: DEWITT_ROOFTOP_COORDS,
-      });
+      // DOM-based overlay so it renders above 3D buildings
+      const rooftopCenter: [number, number] = [
+        (DEWITT_ROOFTOP_COORDS[0][0] + DEWITT_ROOFTOP_COORDS[1][0]) / 2,
+        (DEWITT_ROOFTOP_COORDS[0][1] + DEWITT_ROOFTOP_COORDS[2][1]) / 2,
+      ];
 
-      map.addLayer(
-        {
-          id: "rooftop-overlay-a",
-          type: "raster",
-          source: "rooftop-overlay-a",
-          paint: {
-            "raster-opacity": 0,
-            "raster-fade-duration": 0,
-          },
-        },
-        "patios-sun-glow"
-      );
+      const overlayEl = document.createElement("div");
+      overlayEl.className = "rooftop-overlay";
+      overlayEl.style.cssText =
+        "position:relative;width:180px;height:140px;border-radius:10px;overflow:hidden;" +
+        "opacity:0;transition:opacity 0.6s ease;pointer-events:none;box-shadow:0 2px 12px rgba(0,0,0,0.5);";
 
-      map.addLayer(
-        {
-          id: "rooftop-overlay-b",
-          type: "raster",
-          source: "rooftop-overlay-b",
-          paint: {
-            "raster-opacity": 0,
-            "raster-fade-duration": 0,
-          },
-        },
-        "patios-sun-glow"
-      );
+      const imgA = document.createElement("img");
+      imgA.src = DEWITT_ROOFTOP_PHOTOS[0];
+      imgA.style.cssText =
+        "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" +
+        "opacity:1;transition:opacity 1s ease;";
+      const imgB = document.createElement("img");
+      imgB.src = DEWITT_ROOFTOP_PHOTOS[1];
+      imgB.style.cssText =
+        "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" +
+        "opacity:0;transition:opacity 1s ease;";
 
-      // Crossfade state: true = A visible, false = B visible
+      overlayEl.appendChild(imgA);
+      overlayEl.appendChild(imgB);
+
+      rooftopMarkerRef.current = new mapboxgl.Marker({
+        element: overlayEl,
+        anchor: "center",
+      })
+        .setLngLat(rooftopCenter)
+        .addTo(map);
+
       let rooftopShowingA = true;
-      let rooftopBaseOpacity = 0; // current zoom-based max opacity
 
-      function getRooftopOpacity(zoom: number): number {
-        if (zoom < ROOFTOP_MIN_ZOOM) return 0;
-        if (zoom >= ROOFTOP_FULL_ZOOM) return 0.85;
-        // Linear interpolate between min and full zoom
-        const t = (zoom - ROOFTOP_MIN_ZOOM) / (ROOFTOP_FULL_ZOOM - ROOFTOP_MIN_ZOOM);
-        return t * 0.85;
-      }
-
-      function setRooftopOpacities() {
-        try {
-          const activeLayer = rooftopShowingA ? "rooftop-overlay-a" : "rooftop-overlay-b";
-          const inactiveLayer = rooftopShowingA ? "rooftop-overlay-b" : "rooftop-overlay-a";
-          if (map.getLayer(activeLayer)) {
-            map.setPaintProperty(activeLayer, "raster-opacity", rooftopBaseOpacity);
-          }
-          if (map.getLayer(inactiveLayer)) {
-            map.setPaintProperty(inactiveLayer, "raster-opacity", 0);
-          }
-        } catch { /* map may be removed */ }
-      }
-
-      function startRooftopCycle() {
-        if (rooftopTimerRef.current) return;
-        rooftopTimerRef.current = setInterval(() => {
-          const fadeOutLayer = rooftopShowingA ? "rooftop-overlay-a" : "rooftop-overlay-b";
-          const fadeInLayer = rooftopShowingA ? "rooftop-overlay-b" : "rooftop-overlay-a";
-          const maxOpacity = rooftopBaseOpacity;
-          const steps = 30;
-          const stepMs = 33; // ~1s total crossfade
-          let step = 0;
-
-          const fade = setInterval(() => {
-            step++;
-            const t = step / steps;
-            try {
-              if (map.getLayer(fadeOutLayer)) {
-                map.setPaintProperty(fadeOutLayer, "raster-opacity", maxOpacity * (1 - t));
-              }
-              if (map.getLayer(fadeInLayer)) {
-                map.setPaintProperty(fadeInLayer, "raster-opacity", maxOpacity * t);
-              }
-            } catch { /* map may be removed */ }
-            if (step >= steps) clearInterval(fade);
-          }, stepMs);
-
-          rooftopShowingA = !rooftopShowingA;
-        }, ROOFTOP_CYCLE_MS);
-      }
-
-      function stopRooftopCycle() {
-        if (rooftopTimerRef.current) {
-          clearInterval(rooftopTimerRef.current);
-          rooftopTimerRef.current = null;
-        }
-      }
-
-      // Update opacity and start/stop cycling based on zoom level
-      map.on("zoom", () => {
+      function updateRooftopVisibility() {
         const z = map.getZoom();
-        rooftopBaseOpacity = getRooftopOpacity(z);
         if (z >= ROOFTOP_MIN_ZOOM) {
-          setRooftopOpacities();
-          startRooftopCycle();
+          const t = Math.min(1, (z - ROOFTOP_MIN_ZOOM) / (ROOFTOP_FULL_ZOOM - ROOFTOP_MIN_ZOOM));
+          overlayEl.style.opacity = String(t * 0.9);
+          if (!rooftopTimerRef.current) {
+            rooftopTimerRef.current = setInterval(() => {
+              rooftopShowingA = !rooftopShowingA;
+              imgA.style.opacity = rooftopShowingA ? "1" : "0";
+              imgB.style.opacity = rooftopShowingA ? "0" : "1";
+            }, ROOFTOP_CYCLE_MS);
+          }
         } else {
-          stopRooftopCycle();
-          rooftopBaseOpacity = 0;
-          setRooftopOpacities();
+          overlayEl.style.opacity = "0";
+          if (rooftopTimerRef.current) {
+            clearInterval(rooftopTimerRef.current);
+            rooftopTimerRef.current = null;
+          }
           rooftopShowingA = true;
+          imgA.style.opacity = "1";
+          imgB.style.opacity = "0";
         }
-      });
+      }
+
+      map.on("zoom", updateRooftopVisibility);
+      // Set initial state in case already zoomed in
+      updateRooftopVisibility();
 
       // ── Click handlers ──
       map.on("click", "patios-base", (e) => {
@@ -575,6 +528,7 @@ export default function MapInstance({
         clearInterval(rooftopTimerRef.current);
         rooftopTimerRef.current = null;
       }
+      rooftopMarkerRef.current?.remove();
       map.remove();
       mapRef.current = null;
     };
@@ -645,15 +599,28 @@ export default function MapInstance({
       );
     }
 
-    // Hide ShadeMap shadow overlay at night (no shadows to show)
-    const sm = shadeMapRef.current as { setDate?: (d: Date) => void; remove?: () => void; addTo?: (m: mapboxgl.Map) => void } | null;
-    if (sm?.setDate) sm.setDate(date);
-
-    // Keep patio layers above ShadeMap after each date update
-    if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
-    if (map.getLayer("patios-base")) map.moveLayer("patios-base");
-    if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
-    if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
+    // Toggle ShadeMap: remove at night, restore during day
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sm = shadeMapRef.current as any;
+    if (sm) {
+      if (night && shadeMapActiveRef.current) {
+        try { sm.remove(); } catch { /* already removed */ }
+        shadeMapActiveRef.current = false;
+      } else if (!night && !shadeMapActiveRef.current) {
+        try {
+          sm.addTo(map);
+          shadeMapActiveRef.current = true;
+        } catch { /* already added */ }
+        // Re-order patio layers above restored ShadeMap
+        if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
+        if (map.getLayer("patios-base")) map.moveLayer("patios-base");
+        if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
+        if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
+      }
+      if (!night && shadeMapActiveRef.current && sm.setDate) {
+        sm.setDate(date);
+      }
+    }
   }, [currentMinute, date]);
 
   async function loadShadeMap(map: mapboxgl.Map) {
@@ -688,14 +655,19 @@ export default function MapInstance({
         },
       });
 
-      sm.addTo(map);
       shadeMapRef.current = sm;
 
-      // Ensure patio dots and labels render ABOVE the shadow overlay
-      if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
-      if (map.getLayer("patios-base")) map.moveLayer("patios-base");
-      if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
-      if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
+      // Only add ShadeMap if sun is up — at night it darkens the whole map
+      if (isSunUp(date)) {
+        sm.addTo(map);
+        shadeMapActiveRef.current = true;
+
+        // Ensure patio dots and labels render ABOVE the shadow overlay
+        if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
+        if (map.getLayer("patios-base")) map.moveLayer("patios-base");
+        if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
+        if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
+      }
 
       onShadeMapReady(sm);
     } catch (err) {

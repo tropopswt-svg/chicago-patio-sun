@@ -389,7 +389,24 @@ export default function MapInstance({
         },
       });
 
-      // Selected ring
+      // Selected glow ring (outer pulse)
+      map.addLayer({
+        id: "patios-selected-glow",
+        type: "circle",
+        source: "patios",
+        filter: ["==", ["get", "selected"], true],
+        paint: {
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            12, 16, 16, 24, 20, 32,
+          ],
+          "circle-color": "rgba(0, 210, 255, 0.15)",
+          "circle-blur": 1,
+          "circle-stroke-width": 0,
+        },
+      });
+
+      // Selected ring (inner)
       map.addLayer({
         id: "patios-selected",
         type: "circle",
@@ -400,9 +417,10 @@ export default function MapInstance({
             "interpolate", ["linear"], ["zoom"],
             12, 8, 16, 14, 20, 20,
           ],
-          "circle-color": "transparent",
+          "circle-color": "#00d2ff",
+          "circle-opacity": 0.9,
           "circle-stroke-width": 3,
-          "circle-stroke-color": "#fff",
+          "circle-stroke-color": "#ffffff",
         },
       });
 
@@ -546,6 +564,7 @@ export default function MapInstance({
     // Always keep patio layers on top
     if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
     if (map.getLayer("patios-base")) map.moveLayer("patios-base");
+    if (map.getLayer("patios-selected-glow")) map.moveLayer("patios-selected-glow");
     if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
     if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
   }, [currentMinute, date]);

@@ -14,8 +14,6 @@ interface TimeSliderProps {
   onTogglePlay: () => void;
 }
 
-const DEBOUNCE_MS = 200;
-
 export function TimeSlider({
   timeState,
   sunriseMinute,
@@ -26,20 +24,27 @@ export function TimeSlider({
   const { minuteOfDay, isPlaying, isNight } = timeState;
   const [localMinute, setLocalMinute] = useState(minuteOfDay);
   const [isDragging, setIsDragging] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const pendingMinuteRef = useRef<number | null>(null);
 
   // Sync local state from parent when not dragging
   useEffect(() => {
     if (!isDragging) setLocalMinute(minuteOfDay);
   }, [minuteOfDay, isDragging]);
 
+  // rAF-throttled fire: at most one onMinuteChange per frame for zero-lag updates
   const fireChange = useCallback(
     (minute: number) => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        onMinuteChange(minute);
-      }, DEBOUNCE_MS);
+      pendingMinuteRef.current = minute;
+      if (rafRef.current) return; // already scheduled
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (pendingMinuteRef.current !== null) {
+          onMinuteChange(pendingMinuteRef.current);
+          pendingMinuteRef.current = null;
+        }
+      });
     },
     [onMinuteChange]
   );
@@ -79,7 +84,8 @@ export function TimeSlider({
     (e: React.PointerEvent) => {
       if (!isDragging) return;
       setIsDragging(false);
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
       const m = minuteFromPointer(e.clientX);
       setLocalMinute(m);
       onMinuteChange(m);

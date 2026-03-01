@@ -288,30 +288,28 @@ export function PatioDetailPanel({
           </div>
 
           {/* Interactive time slider */}
-          <div className="space-y-1.5">
-            {/* Time + play button + sun status display */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {onTogglePlay && (
-                  <button
-                    onClick={onTogglePlay}
-                    className={cn("glass-play-btn shrink-0", isPlaying && "playing")}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-5 h-5" />
-                    ) : (
-                      <Play className="w-5 h-5 ml-0.5" />
-                    )}
-                  </button>
-                )}
-                <span
-                  className="text-xl font-semibold tabular-nums"
-                  style={{ color: "#fff", textShadow: "0 0 14px rgba(255,255,255,0.7), 0 0 30px rgba(255,184,0,0.4), 0 2px 4px rgba(0,0,0,0.8)" }}
+          <div className="space-y-2">
+            {/* Time + play button row */}
+            <div className="flex items-center gap-3">
+              {onTogglePlay && (
+                <button
+                  onClick={onTogglePlay}
+                  className={cn("glass-play-btn shrink-0", isPlaying && "playing")}
                 >
-                  {formatTime(localMinute)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5 ml-0.5" />
+                  )}
+                </button>
+              )}
+              <span
+                className="text-xl font-semibold tabular-nums"
+                style={{ color: "#fff", textShadow: "0 0 14px rgba(255,255,255,0.7), 0 0 30px rgba(255,184,0,0.4), 0 2px 4px rgba(0,0,0,0.8)" }}
+              >
+                {formatTime(localMinute)}
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
                 {sunStatus && (
                   <span
                     className="text-sm font-medium"
@@ -395,7 +393,7 @@ export function PatioDetailPanel({
             </div>
 
             {/* Hour labels */}
-            <div className="flex justify-between text-xs px-0.5" style={{ color: "rgba(255,255,255,0.5)", textShadow: "0 0 4px rgba(255,255,255,0.15)" }}>
+            <div className="flex justify-between text-xs px-0.5 mt-1" style={{ color: "rgba(255,255,255,0.5)", textShadow: "0 0 4px rgba(255,255,255,0.15)" }}>
               <span>12a</span>
               <span>6a</span>
               <span>12p</span>

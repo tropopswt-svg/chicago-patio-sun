@@ -392,7 +392,7 @@ export default function MapInstance({
         },
       });
 
-      // Selected glow ring (outer pulse)
+      // Selected glow ring (outer) — yellow when in sun, subtle white when in shade
       map.addLayer({
         id: "patios-selected-glow",
         type: "circle",
@@ -401,15 +401,19 @@ export default function MapInstance({
         paint: {
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
-            12, 16, 16, 24, 20, 32,
+            12, 18, 16, 28, 20, 36,
           ],
-          "circle-color": "rgba(0, 210, 255, 0.15)",
+          "circle-color": [
+            "case", ["==", ["get", "inSun"], true],
+            "rgba(255, 184, 0, 0.25)",
+            "rgba(255, 255, 255, 0.08)",
+          ],
           "circle-blur": 1,
           "circle-stroke-width": 0,
         },
       });
 
-      // Selected ring (inner)
+      // Selected ring (inner) — filled yellow in sun, empty with white ring in shade
       map.addLayer({
         id: "patios-selected",
         type: "circle",
@@ -420,10 +424,18 @@ export default function MapInstance({
             "interpolate", ["linear"], ["zoom"],
             12, 8, 16, 14, 20, 20,
           ],
-          "circle-color": "#00d2ff",
-          "circle-opacity": 0.9,
+          "circle-color": [
+            "case", ["==", ["get", "inSun"], true],
+            "#FFB800",
+            "transparent",
+          ],
+          "circle-opacity": 1.0,
           "circle-stroke-width": 3,
-          "circle-stroke-color": "#ffffff",
+          "circle-stroke-color": [
+            "case", ["==", ["get", "inSun"], true],
+            "#FFD700",
+            "#ffffff",
+          ],
         },
       });
 
@@ -692,6 +704,9 @@ export default function MapInstance({
     if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
 
     onShadeMapReady(sm);
+    } catch (err) {
+      console.warn("ShadeMap creation failed:", err);
+    }
   }
 
   async function loadShadeMap(map: mapboxgl.Map) {

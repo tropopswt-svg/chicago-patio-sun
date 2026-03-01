@@ -455,7 +455,7 @@ function AppContent() {
       )}
 
       {/* Bottom center: Horizontal Time Slider — hidden when filters or sidebar open */}
-      {!filterPanelOpen && !sidebarOpen && (
+      {!filterPanelOpen && !sidebarOpen && !detailPatio && (
         <div
           className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 w-[80vw] sm:w-[400px] z-10"
           onPointerDown={() => setSliderInteracting(true)}

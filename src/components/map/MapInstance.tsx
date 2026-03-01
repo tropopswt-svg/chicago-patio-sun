@@ -145,7 +145,7 @@ export default function MapInstance({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const shadeMapRef = useRef<unknown>(null);
-  const shadeMapActiveRef = useRef(false);
+  const shadeMapLayerIdsRef = useRef<string[]>([]);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const hasZoomedIn = useRef(false);
   const clickCount = useRef(0);
@@ -518,28 +518,26 @@ export default function MapInstance({
       );
     }
 
-    // Toggle ShadeMap: remove at night, restore during day
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sm = shadeMapRef.current as any;
-    if (sm) {
-      if (night && shadeMapActiveRef.current) {
-        try { sm.remove(); } catch { /* already removed */ }
-        shadeMapActiveRef.current = false;
-      } else if (!night && !shadeMapActiveRef.current) {
-        try {
-          sm.addTo(map);
-          shadeMapActiveRef.current = true;
-        } catch { /* already added */ }
-        // Re-order patio layers above restored ShadeMap
-        if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
-        if (map.getLayer("patios-base")) map.moveLayer("patios-base");
-        if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
-        if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
-      }
-      if (!night && shadeMapActiveRef.current && sm.setDate) {
-        sm.setDate(date);
+    // Toggle ShadeMap layers: hide at night, show during day
+    const smLayerIds = shadeMapLayerIdsRef.current;
+    for (const id of smLayerIds) {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, "visibility", night ? "none" : "visible");
       }
     }
+
+    // Update ShadeMap date only during daytime
+    if (!night) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sm = shadeMapRef.current as any;
+      if (sm?.setDate) sm.setDate(date);
+    }
+
+    // Always keep patio layers above everything
+    if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
+    if (map.getLayer("patios-base")) map.moveLayer("patios-base");
+    if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
+    if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
   }, [currentMinute, date]);
 
   async function loadShadeMap(map: mapboxgl.Map) {
@@ -576,17 +574,27 @@ export default function MapInstance({
 
       shadeMapRef.current = sm;
 
-      // Only add ShadeMap if sun is up — at night it darkens the whole map
-      if (isSunUp(date)) {
-        sm.addTo(map);
-        shadeMapActiveRef.current = true;
+      // Capture layers before/after to identify ShadeMap's layers
+      const layersBefore = new Set((map.getStyle()?.layers || []).map((l) => l.id));
+      sm.addTo(map);
+      const layersAfter = (map.getStyle()?.layers || []).map((l) => l.id);
+      const smLayerIds = layersAfter.filter((id) => !layersBefore.has(id));
+      shadeMapLayerIdsRef.current = smLayerIds;
 
-        // Ensure patio dots and labels render ABOVE the shadow overlay
-        if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
-        if (map.getLayer("patios-base")) map.moveLayer("patios-base");
-        if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
-        if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
+      // If night, immediately hide ShadeMap layers
+      if (!isSunUp(date)) {
+        for (const id of smLayerIds) {
+          if (map.getLayer(id)) {
+            map.setLayoutProperty(id, "visibility", "none");
+          }
+        }
       }
+
+      // Ensure patio dots and labels render ABOVE the shadow overlay
+      if (map.getLayer("patios-sun-glow")) map.moveLayer("patios-sun-glow");
+      if (map.getLayer("patios-base")) map.moveLayer("patios-base");
+      if (map.getLayer("patios-selected")) map.moveLayer("patios-selected");
+      if (map.getLayer("neighborhood-labels")) map.moveLayer("neighborhood-labels");
 
       onShadeMapReady(sm);
     } catch (err) {

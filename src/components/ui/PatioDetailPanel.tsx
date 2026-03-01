@@ -222,9 +222,11 @@ export function PatioDetailPanel({
           ...(snapPoint !== 'full' || isPanelDragging
             ? { maxHeight: `${effectiveVh}vh`, transition: isPanelDragging ? 'none' : 'max-height 0.3s ease-out' }
             : {}),
-          background: "linear-gradient(160deg, rgba(20, 20, 45, 0.94) 0%, rgba(15, 15, 35, 0.97) 50%, rgba(25, 25, 50, 0.92) 100%)",
-          border: "0.5px solid rgba(255, 255, 255, 0.15)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
+          background: "linear-gradient(160deg, rgba(20, 20, 45, 0.45) 0%, rgba(15, 15, 35, 0.5) 50%, rgba(25, 25, 50, 0.4) 100%)",
+          backdropFilter: "blur(24px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+          border: "0.5px solid rgba(255, 255, 255, 0.2)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
         }}
       >
         {/* Drag handle (mobile) — drag to resize */}
@@ -244,22 +246,8 @@ export function PatioDetailPanel({
           <X className="w-4 h-4" />
         </button>
 
-        {/* Hero photo */}
-        {heroPhotoUrl ? (
-          <img src={heroPhotoUrl} alt={patio.name} className="w-full h-[120px] object-cover" />
-        ) : (
-          <div className={cn(
-            "w-full h-[120px] flex items-center justify-center",
-            sunStatus?.inSun
-              ? "bg-gradient-to-br from-amber-900/30 to-orange-900/10"
-              : "bg-gradient-to-br from-gray-800/30 to-slate-900/10"
-          )}>
-            <span className="text-4xl">{sunStatus?.inSun ? "☀️" : "🌙"}</span>
-          </div>
-        )}
-
         {/* Content */}
-        <div className="p-4 space-y-3 pb-safe">
+        <div className="relative p-4 space-y-3 pb-safe">
           {/* Name + address */}
           <div>
             <div className="flex items-center gap-2">
@@ -428,6 +416,17 @@ export function PatioDetailPanel({
               )}>
                 {busyness.label}
               </span>
+            </div>
+          )}
+
+          {/* Small thumbnail in bottom-right corner */}
+          {heroPhotoUrl && (
+            <div className="flex justify-end">
+              <img
+                src={heroPhotoUrl}
+                alt={patio.name}
+                className="w-12 h-12 rounded-lg object-cover border border-white/20 shadow-lg"
+              />
             </div>
           )}
         </div>

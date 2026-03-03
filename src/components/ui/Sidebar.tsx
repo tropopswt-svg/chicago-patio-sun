@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Search, Sun, Cloud, Building2, SlidersHorizontal, X } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -59,6 +59,8 @@ export function Sidebar({
   const [hoursStatus, setHoursStatus] = useState<HoursStatus>("all");
   const [showDayPicker, setShowDayPicker] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(30);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const activeFilterCount =
     (sunFilter !== "all" ? 1 : 0) + (hoursStatus !== "all" ? 1 : 0);
@@ -96,7 +98,7 @@ export function Sidebar({
   const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 
   // Apply local filters: sun/shade, open/closed, and search
-  const filtered = patios
+  const filtered = useMemo(() => patios
     .filter((p) => {
       if (sunFilter === "sun") return p.inSun;
       if (sunFilter === "shade") return !p.inSun;
@@ -115,7 +117,22 @@ export function Sidebar({
         !search ||
         normalize(p.name).includes(normalize(search)) ||
         normalize(p.address).includes(normalize(search))
-    );
+    ), [patios, sunFilter, hoursStatus, currentTime, search, normalize]);
+
+  // Reset visible count when filters/search change
+  const prevFilterKey = useRef("");
+  const filterKey = `${search}|${sunFilter}|${hoursStatus}`;
+  if (filterKey !== prevFilterKey.current) {
+    prevFilterKey.current = filterKey;
+    if (visibleCount !== 30) setVisibleCount(30);
+  }
+
+  const handleListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
+      setVisibleCount((v) => Math.min(v + 20, filtered.length));
+    }
+  }, [filtered.length]);
 
   const handleDaySelect = (index: number) => {
     onDateChange(dayOptions[index].date);
@@ -298,11 +315,12 @@ export function Sidebar({
 
         {/* Patio list */}
         <div
+          ref={listRef}
+          onScroll={handleListScroll}
           className="order-7 flex-1 overflow-y-auto px-2 pb-4 space-y-2 min-h-0 pb-safe"
           style={{
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
-            willChange: "scroll-position",
           }}
         >
           {isLoading ? (
@@ -314,7 +332,7 @@ export function Sidebar({
               No patios found
             </div>
           ) : (
-            filtered.map((patio) => (
+            filtered.slice(0, visibleCount).map((patio) => (
               <PatioCard
                 key={patio.id}
                 patio={patio}
